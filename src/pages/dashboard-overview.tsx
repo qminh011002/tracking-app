@@ -62,7 +62,7 @@ export default function DashboardOverview() {
     {
       label: "GROWTH RATE",
       value: isLoading ? "0%" : formatGrowthRate(kpi?.growthRate ?? 0),
-      description: "PROFIT ON COST",
+      description: "VS LAST MONTH",
       icon: iconMap.boom,
       intent:
         (kpi?.growthRate ?? 0) > 0
@@ -94,7 +94,6 @@ export default function DashboardOverview() {
             label={stat.label}
             value={stat.value}
             unitLabel={stat.unitLabel}
-            animationDelayMs={index * 120}
             description={stat.description}
             icon={stat.icon}
             intent={stat.intent}

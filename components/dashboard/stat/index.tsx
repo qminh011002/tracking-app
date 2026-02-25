@@ -10,7 +10,6 @@ interface DashboardStatProps {
   value: string;
   description?: string;
   unitLabel?: string;
-  animationDelayMs?: number;
   tag?: string;
   icon: React.ElementType;
   intent?: "positive" | "negative" | "neutral";
@@ -22,7 +21,6 @@ export default function DashboardStat({
   value,
   description,
   unitLabel,
-  animationDelayMs = 0,
   icon,
   tag,
   intent,
@@ -58,24 +56,6 @@ export default function DashboardStat({
   };
 
   const { prefix, numericValue, suffix, isNumeric } = parseValue(value);
-  const [displayValue, setDisplayValue] = React.useState(0);
-
-  React.useEffect(() => {
-    if (!isNumeric) return;
-
-    setDisplayValue(0);
-    let frameId = 0;
-    const timeoutId = window.setTimeout(() => {
-      frameId = window.requestAnimationFrame(() => {
-        setDisplayValue(numericValue);
-      });
-    }, animationDelayMs);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      if (frameId) window.cancelAnimationFrame(frameId);
-    };
-  }, [animationDelayMs, isNumeric, numericValue]);
 
   return (
     <Card className="relative overflow-hidden">
@@ -93,22 +73,9 @@ export default function DashboardStat({
             {isNumeric ? (
               <div className="flex flex-col">
                 <NumberFlow
-                  value={displayValue}
+                  value={numericValue}
                   prefix={prefix}
                   suffix={suffix}
-                  transformTiming={{
-                    duration: 1300,
-                    easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-                  }}
-                  spinTiming={{
-                    duration: 1300,
-                    easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-                  }}
-                  opacityTiming={{
-                    duration: 500,
-                    easing: "ease-out",
-                  }}
-                  trend={numericValue >= 0 ? 1 : -1}
                 />
                 {unitLabel ? <span className="text-sm">{unitLabel}</span> : null}
               </div>

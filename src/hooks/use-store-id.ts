@@ -3,12 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuthSession } from "@/src/hooks/use-auth-session";
 import { useStoreIdQuery } from "@/src/queries/hooks";
 
-const STORE_ID_KEY_PREFIX = "store_id";
-
-function getStoreIdKey(userId?: string) {
-  if (!userId) return STORE_ID_KEY_PREFIX;
-  return `${STORE_ID_KEY_PREFIX}:${userId}`;
-}
+const STORE_ID_KEY = "store_id";
 
 function getFromMetadata(session: ReturnType<typeof useAuthSession>["session"]) {
   if (!session) return "";
@@ -32,25 +27,12 @@ export function useStoreId() {
   });
 
   React.useEffect(() => {
-    const userId = session?.user.id;
-    const storeKey = getStoreIdKey(userId);
-
     if (!session) {
-      const keysToRemove: string[] = [];
-      for (let index = 0; index < localStorage.length; index += 1) {
-        const key = localStorage.key(index);
-        if (!key) continue;
-        if (key === STORE_ID_KEY_PREFIX || key.startsWith(`${STORE_ID_KEY_PREFIX}:`)) {
-          keysToRemove.push(key);
-        }
-      }
-      for (const key of keysToRemove) {
-        localStorage.removeItem(key);
-      }
+      localStorage.removeItem(STORE_ID_KEY);
       return;
     }
     if (!queriedStoreId) return;
-    localStorage.setItem(storeKey, queriedStoreId);
+    localStorage.setItem(STORE_ID_KEY, queriedStoreId);
     if (metadataStoreId !== queriedStoreId) {
       void supabase.auth.updateUser({
         data: { store_id: queriedStoreId },
@@ -62,7 +44,7 @@ export function useStoreId() {
     return { storeId: "", loading: false };
   }
 
-  const fallbackFromLocal = localStorage.getItem(getStoreIdKey(session?.user.id)) ?? "";
+  const fallbackFromLocal = localStorage.getItem(STORE_ID_KEY) ?? "";
   return {
     storeId: queriedStoreId || metadataStoreId || fallbackFromLocal,
     loading: loadingSession || isLoading,
