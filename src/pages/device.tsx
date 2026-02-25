@@ -17,27 +17,34 @@ import { ImageIcon, Plus, Search, SquarePen, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/src/components/common/confirm-dialog";
 import { useStoreId } from "@/src/hooks/use-store-id";
 import {
-  createModel,
-  deleteModel,
-  getModels,
   type ModelItem,
-  updateModel,
 } from "@/src/services/models";
+import {
+  useCreateModelMutation,
+  useDeleteModelMutation,
+  useModelsQuery,
+  useUpdateModelMutation,
+} from "@/src/queries/hooks";
 
 export default function DevicePage() {
   const { storeId, loading: loadingStoreId } = useStoreId();
 
   const [query, setQuery] = React.useState("");
-  const [items, setItems] = React.useState<ModelItem[]>([]);
-  const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const {
+    data: items = [],
+    isLoading: loadingModels,
+    error: modelsError,
+  } = useModelsQuery({
+    storeId,
+    searchTerm: query,
+  });
 
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createName, setCreateName] = React.useState("");
   const [createImageFile, setCreateImageFile] = React.useState<File | null>(
     null,
   );
-  const [createLoading, setCreateLoading] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
 
   const [editOpen, setEditOpen] = React.useState(false);
@@ -46,14 +53,18 @@ export default function DevicePage() {
   );
   const [editName, setEditName] = React.useState("");
   const [editImageFile, setEditImageFile] = React.useState<File | null>(null);
-  const [editLoading, setEditLoading] = React.useState(false);
   const [editError, setEditError] = React.useState<string | null>(null);
 
-  const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<ModelItem | null>(
     null,
   );
-  const isDevicesLoading = loadingStoreId || loading;
+  const createModelMutation = useCreateModelMutation();
+  const updateModelMutation = useUpdateModelMutation();
+  const deleteModelMutation = useDeleteModelMutation();
+  const createLoading = createModelMutation.isPending;
+  const editLoading = updateModelMutation.isPending;
+  const deletingId = (deleteModelMutation.variables as { id?: string } | undefined)?.id ?? null;
+  const isDevicesLoading = loadingStoreId || loadingModels;
   const createImagePreview = React.useMemo(
     () => (createImageFile ? URL.createObjectURL(createImageFile) : null),
     [createImageFile],
@@ -75,32 +86,17 @@ export default function DevicePage() {
     };
   }, [editImagePreview]);
 
-  const loadModels = React.useCallback(async () => {
-    if (!storeId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getModels({ storeId, searchTerm: query });
-      setItems(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load models");
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [storeId, query]);
-
   React.useEffect(() => {
-    void loadModels();
-  }, [loadModels]);
+    if (!modelsError) return;
+    setError(modelsError instanceof Error ? modelsError.message : "Failed to load models");
+  }, [modelsError]);
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!storeId) return;
-    setCreateLoading(true);
     setCreateError(null);
     try {
-      await createModel({
+      await createModelMutation.mutateAsync({
         storeId,
         name: createName,
         imageFile: createImageFile,
@@ -108,13 +104,10 @@ export default function DevicePage() {
       setCreateOpen(false);
       setCreateName("");
       setCreateImageFile(null);
-      await loadModels();
     } catch (err) {
       setCreateError(
         err instanceof Error ? err.message : "Failed to create model",
       );
-    } finally {
-      setCreateLoading(false);
     }
   };
 
@@ -129,10 +122,9 @@ export default function DevicePage() {
   const handleEdit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!storeId || !editingModel) return;
-    setEditLoading(true);
     setEditError(null);
     try {
-      await updateModel({
+      await updateModelMutation.mutateAsync({
         storeId,
         id: editingModel.id,
         name: editName,
@@ -141,26 +133,19 @@ export default function DevicePage() {
       setEditOpen(false);
       setEditingModel(null);
       setEditName("");
-      await loadModels();
     } catch (err) {
       setEditError(
         err instanceof Error ? err.message : "Failed to update model",
       );
-    } finally {
-      setEditLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!storeId) return;
-    setDeletingId(id);
     try {
-      await deleteModel({ storeId, id });
-      await loadModels();
+      await deleteModelMutation.mutateAsync({ storeId, id });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete model");
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -276,7 +261,7 @@ export default function DevicePage() {
                       size="icon-sm"
                       variant="ghost"
                       className="text-destructive hover:text-destructive"
-                      disabled={deletingId === item.id}
+                      disabled={deleteModelMutation.isPending && deletingId === item.id}
                       onClick={() => setDeleteTarget(item)}
                     >
                       <Trash2 className="size-4" />
@@ -479,7 +464,7 @@ export default function DevicePage() {
             : "Delete this model?"
         }
         confirmText="Delete"
-        loading={Boolean(deleteTarget && deletingId === deleteTarget.id)}
+        loading={Boolean(deleteTarget && deleteModelMutation.isPending && deletingId === deleteTarget.id)}
         onConfirm={async () => {
           if (!deleteTarget) return;
           await handleDelete(deleteTarget.id);

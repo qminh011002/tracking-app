@@ -6,7 +6,8 @@ import ProcessorIcon from "@/components/icons/proccesor";
 import { InventoryDetailDialog } from "@/components/inventory/inventory-detail-dialog";
 import { Button } from "@/components/ui/button";
 import { useStoreId } from "@/src/hooks/use-store-id";
-import { getInventoryById, type InventoryItem } from "@/src/services/inventory";
+import { type InventoryItem } from "@/src/services/inventory";
+import { useInventoryDetailQuery } from "@/src/queries/hooks";
 
 function formatDate(value?: string) {
   if (!value) return "-";
@@ -24,16 +25,26 @@ function toDialogItem(item: InventoryItem) {
     modelImage: item.model_image,
     images: item.images.map((x) => x.image_url),
     buyInfo: {
+      transactionId: item.buy?.id,
       amount: item.buy?.buy_price ?? 0,
       name: item.buy?.snapshot_name ?? "N/A",
       phone: item.buy?.snapshot_phone ?? "-",
+      provinceId: item.buy?.snapshot_province_id ?? null,
+      province: item.buy?.snapshot_province_name ?? "-",
+      addressDetail: item.buy?.snapshot_address ?? "",
       date: formatDate(item.buy?.buy_date),
+      dateRaw: item.buy?.buy_date,
     },
     sellInfo: {
+      transactionId: item.sell?.id,
       amount: item.sell?.sell_price ?? null,
       name: item.sell?.snapshot_name ?? "Pending",
       phone: item.sell?.snapshot_phone ?? "-",
+      provinceId: item.sell?.snapshot_province_id ?? null,
+      province: item.sell?.snapshot_province_name ?? "-",
+      addressDetail: item.sell?.snapshot_address ?? "",
       date: formatDate(item.sell?.sell_date),
+      dateRaw: item.sell?.sell_date,
     },
   };
 }
@@ -43,41 +54,11 @@ export default function InventoryDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { storeId, loading: loadingStoreId } = useStoreId();
   const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-
-  const [item, setItem] = React.useState<ReturnType<typeof toDialogItem> | null>(
-    null,
-  );
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (!id || !storeId || loadingStoreId) {
-      setLoading(false);
-      return;
-    }
-
-    let active = true;
-    setLoading(true);
-    setError(null);
-
-    void getInventoryById({ id, storeId })
-      .then((result) => {
-        if (!active) return;
-        setItem(result ? toDialogItem(result) : null);
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        setError(err instanceof Error ? err.message : "Failed to load inventory");
-      })
-      .finally(() => {
-        if (!active) return;
-        setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [id, storeId, loadingStoreId]);
+  const { data, isLoading: loading, error } = useInventoryDetailQuery({
+    id: id ?? "",
+    storeId,
+  });
+  const item = data ? toDialogItem(data) : null;
 
   if (isDesktop) {
     return <Navigate to="/inventory" replace />;
@@ -118,7 +99,7 @@ export default function InventoryDetailPage() {
 
         {error && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-4 text-sm text-destructive">
-            {error}
+            {error instanceof Error ? error.message : "Failed to load inventory"}
           </div>
         )}
 

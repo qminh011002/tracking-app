@@ -1,8 +1,14 @@
 import * as React from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthSession } from "@/src/hooks/use-auth-session";
+import { useStoreIdQuery } from "@/src/queries/hooks";
 
-const STORE_ID_KEY = "store_id";
+const STORE_ID_KEY_PREFIX = "store_id";
+
+function getStoreIdKey(userId?: string) {
+  if (!userId) return STORE_ID_KEY_PREFIX;
+  return `${STORE_ID_KEY_PREFIX}:${userId}`;
+}
 
 function getFromMetadata(session: ReturnType<typeof useAuthSession>["session"]) {
   if (!session) return "";
@@ -17,75 +23,48 @@ function getFromMetadata(session: ReturnType<typeof useAuthSession>["session"]) 
 
 export function useStoreId() {
   const { session, loading: loadingSession } = useAuthSession();
-  const [storeId, setStoreId] = React.useState("");
-  const [loading, setLoading] = React.useState(true);
+  const metadataStoreId = React.useMemo(() => getFromMetadata(session), [session]);
+
+  const { data: queriedStoreId = "", isLoading } = useStoreIdQuery({
+    userId: session?.user.id ?? "",
+    enabled: Boolean(session?.user.id && !loadingSession),
+    fallbackStoreId: metadataStoreId || undefined,
+  });
 
   React.useEffect(() => {
-    if (loadingSession) return;
+    const userId = session?.user.id;
+    const storeKey = getStoreIdKey(userId);
+
     if (!session) {
-      setStoreId("");
-      setLoading(false);
-      return;
-    }
-
-    let active = true;
-    const fromMetadata = getFromMetadata(session);
-    if (fromMetadata) {
-      localStorage.setItem(STORE_ID_KEY, fromMetadata);
-      setStoreId(fromMetadata);
-      setLoading(false);
-      return;
-    }
-
-    const fromLocal = localStorage.getItem(STORE_ID_KEY) ?? "";
-    if (fromLocal) {
-      setStoreId(fromLocal);
-    }
-
-    void (async () => {
-      try {
-        let resolved = "";
-
-        const byId = await supabase
-          .from("profiles")
-          .select("store_id")
-          .eq("id", session.user.id)
-          .maybeSingle();
-
-        if (!byId.error && byId.data?.store_id) {
-          resolved = String(byId.data.store_id);
+      const keysToRemove: string[] = [];
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key) continue;
+        if (key === STORE_ID_KEY_PREFIX || key.startsWith(`${STORE_ID_KEY_PREFIX}:`)) {
+          keysToRemove.push(key);
         }
-
-        if (!resolved) {
-          const byUserId = await supabase
-            .from("profiles")
-            .select("store_id")
-            .eq("user_id", session.user.id)
-            .maybeSingle();
-
-          if (!byUserId.error && byUserId.data?.store_id) {
-            resolved = String(byUserId.data.store_id);
-          }
-        }
-
-        if (!active) return;
-
-        if (resolved) {
-          setStoreId(resolved);
-          localStorage.setItem(STORE_ID_KEY, resolved);
-          void supabase.auth.updateUser({
-            data: { store_id: resolved },
-          });
-        }
-      } finally {
-        if (active) setLoading(false);
       }
-    })();
+      for (const key of keysToRemove) {
+        localStorage.removeItem(key);
+      }
+      return;
+    }
+    if (!queriedStoreId) return;
+    localStorage.setItem(storeKey, queriedStoreId);
+    if (metadataStoreId !== queriedStoreId) {
+      void supabase.auth.updateUser({
+        data: { store_id: queriedStoreId },
+      });
+    }
+  }, [session, queriedStoreId, metadataStoreId]);
 
-    return () => {
-      active = false;
-    };
-  }, [session, loadingSession]);
+  if (!session && !loadingSession) {
+    return { storeId: "", loading: false };
+  }
 
-  return { storeId, loading };
+  const fallbackFromLocal = localStorage.getItem(getStoreIdKey(session?.user.id)) ?? "";
+  return {
+    storeId: queriedStoreId || metadataStoreId || fallbackFromLocal,
+    loading: loadingSession || isLoading,
+  };
 }

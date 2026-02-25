@@ -1,12 +1,12 @@
 import * as React from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { LockKeyhole, Store } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useAuthSession } from "@/src/hooks/use-auth-session";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useSignInMutation, useSignUpMutation } from "@/src/queries/hooks";
 
 type AuthMode = "signin" | "signup";
 
@@ -21,26 +21,24 @@ export default function AuthPage() {
   const [storeId, setStoreId] = React.useState("");
   const [signUpEmail, setSignUpEmail] = React.useState("");
   const [signUpPassword, setSignUpPassword] = React.useState("");
-
-  const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
+  const signInMutation = useSignInMutation();
+  const signUpMutation = useSignUpMutation();
+  const loading = signInMutation.isPending || signUpMutation.isPending;
 
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoading(true);
     setError(null);
     setMessage(null);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: signInEmail,
-      password: signInPassword,
-    });
-
-    setLoading(false);
-
-    if (signInError) {
-      setError(signInError.message);
+    try {
+      await signInMutation.mutateAsync({
+        email: signInEmail,
+        password: signInPassword,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign in failed");
       return;
     }
 
@@ -49,24 +47,22 @@ export default function AuthPage() {
 
   const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoading(true);
     setError(null);
     setMessage(null);
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: signUpEmail,
-      password: signUpPassword,
-      options: {
-        data: {
-          store_id: storeId,
-        },
-      },
-    });
-
-    setLoading(false);
-
-    if (signUpError) {
-      setError(signUpError.message);
+    let data:
+      | {
+          session: { access_token: string } | null;
+        }
+      | undefined;
+    try {
+      data = await signUpMutation.mutateAsync({
+        email: signUpEmail,
+        password: signUpPassword,
+        storeId,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign up failed");
       return;
     }
 

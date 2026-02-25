@@ -1,7 +1,8 @@
-import { CalendarDays, Phone, Tag } from "lucide-react";
+import { CalendarDays, MapPin, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import MoneyPlus from "../icons/money-plus";
 
 export type InventoryStatus = "in_stock" | "sold";
 
@@ -13,16 +14,26 @@ export type InventoryItem = {
   modelImage?: string | null;
   images?: string[];
   buyInfo: {
+    transactionId?: string;
     amount: number;
     name: string;
     phone: string;
+    provinceId?: number | null;
+    province: string;
+    addressDetail: string;
     date: string;
+    dateRaw?: string;
   };
   sellInfo: {
+    transactionId?: string;
     amount: number | null;
     name: string;
     phone: string;
+    provinceId?: number | null;
+    province: string;
+    addressDetail: string;
     date: string;
+    dateRaw?: string;
   };
 };
 
@@ -36,8 +47,22 @@ function netProfit(item: InventoryItem) {
   return item.sellInfo.amount - item.buyInfo.amount;
 }
 
+function getStockAgeDays(dateRaw?: string) {
+  if (!dateRaw) return 0;
+  const start = Date.parse(dateRaw);
+  if (Number.isNaN(start)) return 0;
+  const now = Date.now();
+  const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+  return Math.max(0, diff);
+}
+
 export function InventoryCard({ item }: { item: InventoryItem }) {
   const profit = netProfit(item);
+  const stockAgeDays = getStockAgeDays(item.buyInfo.dateRaw);
+  const sellName =
+    item.status === "in_stock"
+      ? `In stock ${stockAgeDays} day${stockAgeDays === 1 ? "" : "s"}`
+      : item.sellInfo.name;
 
   return (
     <Card className="h-full rounded-lg transition-all duration-150 hover:cursor-pointer hover:shadow-[0_0_18px_rgba(255,255,255,0.1)]">
@@ -66,7 +91,7 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             {item.status === "sold" ? "Sold" : "In stock"}
           </Badge>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-[0.16em]">
+        <div className="flex items-center gap-2 text-[14px] text-white/80 uppercase tracking-[0.16em]">
           <Tag className="size-3.5" />
           <span>{item.label}</span>
         </div>
@@ -83,8 +108,8 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             </div>
             <div className="font-semibold">{item.buyInfo.name}</div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Phone className="size-3.5" />
-              <span>{item.buyInfo.phone}</span>
+              <MapPin className="size-3.5" />
+              <span>{item.buyInfo.province || "-"}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <CalendarDays className="size-3.5" />
@@ -92,30 +117,51 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             </div>
           </div>
 
-          <div className="space-y-2 pl-1">
-            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-              Sell info
+          {item.status === "in_stock" ? (
+            <div className="space-y-2 pl-1">
+              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                Status
+              </div>
+              <div className="flex items-center gap-2.5 rounded-lg  bg-muted px-3 py-2.5">
+                <div className="relative grid size-10 place-items-center rounded-md bg-primary/10 text-primary">
+                  <CalendarDays className="size-7 opacity-75" color="white" />
+                </div>
+                <div className="leading-tight">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    In Stock
+                  </div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {stockAgeDays} day{stockAgeDays === 1 ? "" : "s"}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div
-              className={cn(
-                "text-xl font-bold",
-                item.sellInfo.amount === null
-                  ? "text-muted-foreground"
-                  : "text-[#3B82F6]",
-              )}
-            >
-              {formatMoney(item.sellInfo.amount)}
+          ) : (
+            <div className="space-y-2 pl-1">
+              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                Sell info
+              </div>
+              <div
+                className={cn(
+                  "text-xl font-bold",
+                  item.sellInfo.amount === null
+                    ? "text-muted-foreground"
+                    : "text-[#3B82F6]",
+                )}
+              >
+                {formatMoney(item.sellInfo.amount)}
+              </div>
+              <div className="font-semibold">{sellName}</div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <MapPin className="size-3.5" />
+                <span>{item.sellInfo.province || "-"}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CalendarDays className="size-3.5" />
+                <span>{item.sellInfo.date}</span>
+              </div>
             </div>
-            <div className="font-semibold">{item.sellInfo.name}</div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Phone className="size-3.5" />
-              <span>{item.sellInfo.phone}</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <CalendarDays className="size-3.5" />
-              <span>{item.sellInfo.date}</span>
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="pt-3">

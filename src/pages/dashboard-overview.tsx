@@ -7,6 +7,8 @@ import BracketsIcon from "@/components/icons/brackets";
 import GearIcon from "@/components/icons/gear";
 import ProcessorIcon from "@/components/icons/proccesor";
 import BoomIcon from "@/components/icons/boom";
+import { useStoreId } from "@/src/hooks/use-store-id";
+import { useDashboardKpiQuery } from "@/src/queries/hooks";
 import mockDataJson from "@/mock.json";
 import type { MockData } from "@/types/dashboard";
 
@@ -18,7 +20,65 @@ const iconMap = {
   boom: BoomIcon,
 };
 
+function formatGrowthRate(value: number) {
+  const rounded = Math.round(value * 10) / 10;
+  const sign = rounded > 0 ? "+" : "";
+  return `${sign}${rounded}%`;
+}
+
 export default function DashboardOverview() {
+  const { storeId } = useStoreId();
+  const { data: kpi, isLoading } = useDashboardKpiQuery({ storeId });
+
+  const dashboardStats = [
+    {
+      label: "TOTAL SALES",
+      value: isLoading ? "0" : String(Math.round(kpi?.totalSales ?? 0)),
+      unitLabel: "VND",
+      description: "ALL SOLD ORDERS",
+      icon: iconMap.gear,
+      intent: (kpi?.totalSales ?? 0) > 0 ? "positive" : "neutral",
+      direction: (kpi?.totalSales ?? 0) > 0 ? "up" : undefined,
+    },
+    {
+      label: "TOTAL PROFIT",
+      value: isLoading ? "0" : String(Math.round(kpi?.totalProfit ?? 0)),
+      unitLabel: "VND",
+      description: "REALIZED PROFIT",
+      icon: iconMap.proccesor,
+      intent:
+        (kpi?.totalProfit ?? 0) > 0
+          ? "positive"
+          : (kpi?.totalProfit ?? 0) < 0
+            ? "negative"
+            : "neutral",
+      direction:
+        (kpi?.totalProfit ?? 0) > 0
+          ? "up"
+          : (kpi?.totalProfit ?? 0) < 0
+            ? "down"
+            : undefined,
+    },
+    {
+      label: "GROWTH RATE",
+      value: isLoading ? "0%" : formatGrowthRate(kpi?.growthRate ?? 0),
+      description: "PROFIT ON COST",
+      icon: iconMap.boom,
+      intent:
+        (kpi?.growthRate ?? 0) > 0
+          ? "positive"
+          : (kpi?.growthRate ?? 0) < 0
+            ? "negative"
+            : "neutral",
+      direction:
+        (kpi?.growthRate ?? 0) > 0
+          ? "up"
+          : (kpi?.growthRate ?? 0) < 0
+            ? "down"
+            : undefined,
+    },
+  ] as const;
+
   return (
     <DashboardPageLayout
       header={{
@@ -28,14 +88,15 @@ export default function DashboardOverview() {
       }}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {mockData.dashboardStats.map((stat, index) => (
+        {dashboardStats.map((stat, index) => (
           <DashboardStat
             key={index}
             label={stat.label}
             value={stat.value}
+            unitLabel={stat.unitLabel}
+            animationDelayMs={index * 120}
             description={stat.description}
-            icon={iconMap[stat.icon as keyof typeof iconMap]}
-            tag={stat.tag}
+            icon={stat.icon}
             intent={stat.intent}
             direction={stat.direction}
           />

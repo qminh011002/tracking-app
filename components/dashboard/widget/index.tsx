@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import TVNoise from "@/components/ui/tv-noise";
 import type { WidgetData } from "@/types/dashboard";
 import { assetPath } from "@/lib/asset-path";
@@ -13,6 +12,8 @@ interface WidgetProps {
 
 export default function Widget({ widgetData }: WidgetProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [locationText, setLocationText] = useState(widgetData.location);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -21,6 +22,58 @@ export default function Widget({ widgetData }: WidgetProps) {
 
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    let ignore = false;
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const response = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.latitude}&longitude=${coords.longitude}&localityLanguage=en`,
+          );
+
+          if (!response.ok) throw new Error("Failed to reverse geocode");
+          const data = (await response.json()) as {
+            principalSubdivision?: string;
+            countryName?: string;
+          };
+
+          const province = (data.principalSubdivision ?? "").trim();
+          const country = (data.countryName ?? "").trim();
+          const nextLocation = [province, country].filter(Boolean).join(", ");
+
+          if (!ignore && nextLocation) {
+            setLocationText(nextLocation);
+          }
+        } catch {
+          if (!ignore) {
+            setLocationText(widgetData.location);
+          }
+        } finally {
+          if (!ignore) setIsLocating(false);
+        }
+      },
+      () => {
+        if (!ignore) {
+          setLocationText(widgetData.location);
+          setIsLocating(false);
+        }
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 1000 * 60 * 10,
+      },
+    );
+
+    return () => {
+      ignore = true;
+    };
+  }, [widgetData.location]);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
@@ -62,7 +115,7 @@ export default function Widget({ widgetData }: WidgetProps) {
         </div>
 
         <div className="flex justify-center items-center">
-          <span>{widgetData.location}</span>
+          <span>{isLocating ? "Locating..." : locationText}</span>
         </div>
       </CardContent>
     </Card>

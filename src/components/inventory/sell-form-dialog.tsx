@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,10 +18,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { createSell } from "@/src/services/inventory-transactions";
+import { cn } from "@/lib/utils";
+import { type SellableBuyTransactionItem } from "@/src/services/inventory-transactions";
+import { type ProvinceItem } from "@/src/services/provinces";
+import { ProvinceCombobox } from "@/src/components/inventory/province-combobox";
+import { BuyTransactionCombobox } from "@/src/components/inventory/buy-transaction-combobox";
+import { MoneyInput } from "@/src/components/inventory/money-input";
 import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
+import {
+  useCreateSellMutation,
+  useProvincesQuery,
+  useSellableBuyTransactionsQuery,
+} from "@/src/queries/hooks";
 
 type SellFormDialogProps = {
   storeId: string;
@@ -41,40 +51,45 @@ const isNotFutureDate = (value: string) => {
   return input.getTime() <= today.getTime();
 };
 
-const sellFormSchema = z
-  .object({
-    buyTransactionId: z.string().min(1, "Buy Transaction ID is required"),
-    sellType: z.enum(["SHIP", "DIRECT"]),
-    city: z.enum(["Da Nang", "Sai Gon", "Ha Noi", "Other", ""]).optional(),
-    buyerName: z.string().min(1, "Buyer name is required"),
-    buyerPhone: z
-      .string()
-      .optional()
-      .refine((value) => !value || /^\d{10}$/.test(value), {
-        message: "Buyer phone must be exactly 10 digits",
-      }),
-    sellPrice: z.string().refine((value) => /^\d+$/.test(value), {
-      message: "Sell price is required",
+const sellFormSchema = z.object({
+  buyTransactionId: z.string().min(1, "Buy inventory is required"),
+  sellType: z.enum(["SHIP", "DIRECT"]),
+  buyerProvinceId: z.string().min(1, "Province is required"),
+  buyerName: z.string().min(1, "Buyer name is required"),
+  buyerPhone: z
+    .string()
+    .optional()
+    .refine((value) => !value || /^\d{10}$/.test(value), {
+      message: "Buyer phone must be exactly 10 digits",
     }),
-    depositAmount: z.string().optional(),
-    shippingFee: z.string().optional(),
-    sellDate: z
-      .string()
-      .min(1, "Sell date is required")
-      .refine((value) => /^\d{4}-\d{2}-\d{2}$/.test(value), {
-        message: "Sell date must be in YYYY-MM-DD format",
-      })
-      .refine((value) => isValidDateValue(value), {
-        message: "Sell date is invalid",
-      })
-      .refine((value) => isNotFutureDate(value), {
-        message: "Sell date cannot be in the future",
-      }),
-  })
-  .refine((data) => data.sellType !== "DIRECT" || Boolean(data.city), {
-    message: "City is required for DIRECT sell type",
-    path: ["city"],
-  });
+  sellPrice: z.string().refine((value) => /^\d+$/.test(value), {
+    message: "Sell price is required",
+  }),
+  depositAmount: z
+    .string()
+    .optional()
+    .refine((value) => !value || /^\d+$/.test(value), {
+      message: "Deposit amount is invalid",
+    }),
+  shippingFee: z
+    .string()
+    .optional()
+    .refine((value) => !value || /^\d+$/.test(value), {
+      message: "Shipping fee is invalid",
+    }),
+  sellDate: z
+    .string()
+    .min(1, "Sell date is required")
+    .refine((value) => /^\d{4}-\d{2}-\d{2}$/.test(value), {
+      message: "Sell date must be in YYYY-MM-DD format",
+    })
+    .refine((value) => isValidDateValue(value), {
+      message: "Sell date is invalid",
+    })
+    .refine((value) => isNotFutureDate(value), {
+      message: "Sell date cannot be in the future",
+    }),
+});
 
 export function SellFormDialog({
   storeId,
@@ -82,14 +97,19 @@ export function SellFormDialog({
   onOpenChange,
   onCreated,
 }: SellFormDialogProps) {
-  const [sellLoading, setSellLoading] = React.useState(false);
   const [sellError, setSellError] = React.useState<string | null>(null);
+  const createSellMutation = useCreateSellMutation();
+  const sellLoading = createSellMutation.isPending;
+  const { data: provincesData = [], isLoading: provincesLoading } =
+    useProvincesQuery(open);
+  const { data: sellableBuysData = [], isLoading: sellableBuysLoading } =
+    useSellableBuyTransactionsQuery({
+      storeId,
+    });
 
   const [buyTransactionId, setBuyTransactionId] = React.useState("");
-  const [sellType, setSellType] = React.useState<"SHIP" | "DIRECT">("SHIP");
-  const [city, setCity] = React.useState<
-    "Da Nang" | "Sai Gon" | "Ha Noi" | "Other" | ""
-  >("");
+  const [sellType, setSellType] = React.useState<"SHIP" | "DIRECT">("DIRECT");
+  const [buyerProvinceId, setBuyerProvinceId] = React.useState("");
   const [buyerName, setBuyerName] = React.useState("");
   const [buyerPhone, setBuyerPhone] = React.useState("");
   const [buyerAddress, setBuyerAddress] = React.useState("");
@@ -101,11 +121,25 @@ export function SellFormDialog({
   >("");
   const [sellDate, setSellDate] = React.useState("");
   const [sellImages, setSellImages] = React.useState<File[]>([]);
+  const [sellImageInputKey, setSellImageInputKey] = React.useState(0);
+  const provinces = provincesData as ProvinceItem[];
+  const sellableBuys = sellableBuysData as SellableBuyTransactionItem[];
+
+  const sellImagePreviews = React.useMemo(
+    () => sellImages.map((file) => URL.createObjectURL(file)),
+    [sellImages],
+  );
+
+  React.useEffect(() => {
+    return () => {
+      sellImagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [sellImagePreviews]);
 
   const resetSell = () => {
     setBuyTransactionId("");
     setSellType("SHIP");
-    setCity("");
+    setBuyerProvinceId("");
     setBuyerName("");
     setBuyerPhone("");
     setBuyerAddress("");
@@ -115,7 +149,26 @@ export function SellFormDialog({
     setShippingPaidBy("");
     setSellDate("");
     setSellImages([]);
+    setSellImageInputKey((prev) => prev + 1);
     setSellError(null);
+  };
+
+  const handleAddSellImages = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const next = Array.from(files);
+    setSellImages((prev) => [...prev, ...next]);
+    setSellImageInputKey((prev) => prev + 1);
+  };
+
+  const removeSellImage = (index: number) => {
+    setSellImages((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const closeDialogSafely = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    requestAnimationFrame(() => onOpenChange(false));
   };
 
   const handleCreateSell = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -123,7 +176,7 @@ export function SellFormDialog({
     const parsed = sellFormSchema.safeParse({
       buyTransactionId,
       sellType,
-      city,
+      buyerProvinceId,
       buyerName,
       buyerPhone,
       sellPrice,
@@ -138,17 +191,13 @@ export function SellFormDialog({
       return;
     }
 
-    setSellLoading(true);
     setSellError(null);
 
-    const result = await createSell({
+    const result = await createSellMutation.mutateAsync({
       storeId,
       buy_transaction_id: buyTransactionId,
       sell_type: sellType,
-      city:
-        sellType === "DIRECT"
-          ? (city as "Da Nang" | "Sai Gon" | "Ha Noi" | "Other")
-          : undefined,
+      buyer_province_id: Number(buyerProvinceId),
       buyer_name: buyerName,
       buyer_phone: buyerPhone || undefined,
       buyer_address: buyerAddress || undefined,
@@ -160,8 +209,6 @@ export function SellFormDialog({
       images: sellImages,
     });
 
-    setSellLoading(false);
-
     if (!result.ok) {
       setSellError(result.error ?? "Failed to create SELL");
       toast({
@@ -172,7 +219,7 @@ export function SellFormDialog({
       return;
     }
 
-    onOpenChange(false);
+    closeDialogSafely();
     resetSell();
     onCreated();
     toast({
@@ -183,7 +230,7 @@ export function SellFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create SELL</DialogTitle>
           <DialogDescription>
@@ -191,50 +238,78 @@ export function SellFormDialog({
           </DialogDescription>
         </DialogHeader>
         <form
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3"
           onSubmit={handleCreateSell}
         >
           <div className="space-y-2 md:col-span-2">
-            <Label>Buy Transaction ID</Label>
-            <Input
-              required
+            <Label>Buy Inventory *</Label>
+            <BuyTransactionCombobox
               value={buyTransactionId}
-              onChange={(e) => setBuyTransactionId(e.target.value)}
+              onChange={setBuyTransactionId}
+              items={sellableBuys}
+              loading={sellableBuysLoading}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 md:col-span-2">
             <Label>Sell Type</Label>
             <Select
               value={sellType}
-              onValueChange={(v) => setSellType(v as "SHIP" | "DIRECT")}
+              onValueChange={(v) => {
+                const next = v as "SHIP" | "DIRECT";
+                setSellType(next);
+                if (next === "DIRECT") {
+                  setShippingFee("0");
+                  setShippingPaidBy("");
+                }
+              }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                className={cn(
+                  "w-full",
+                  sellType === "SHIP"
+                    ? "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:text-yellow-300 dark:border-yellow-900"
+                    : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900",
+                )}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="SHIP">SHIP</SelectItem>
-                <SelectItem value="DIRECT">DIRECT</SelectItem>
+                <SelectItem
+                  value="SHIP"
+                  className="text-yellow-300 data-highlighted:bg-yellow-500/20 data-highlighted:text-yellow-200"
+                >
+                  SHIP
+                </SelectItem>
+                <SelectItem
+                  value="DIRECT"
+                  className="text-blue-300 data-highlighted:bg-blue-500/20 data-highlighted:text-blue-200"
+                >
+                  DIRECT
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>City</Label>
-            <Select value={city} onValueChange={(v) => setCity(v as typeof city)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select city" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Da Nang">Da Nang</SelectItem>
-                <SelectItem value="Sai Gon">Sai Gon</SelectItem>
-                <SelectItem value="Ha Noi">Ha Noi</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Buyer Province *</Label>
+            <ProvinceCombobox
+              value={buyerProvinceId}
+              onChange={setBuyerProvinceId}
+              provinces={provinces}
+              loading={provincesLoading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Buyer Address Detail</Label>
+            <Input
+              value={buyerAddress}
+              onChange={(e) => setBuyerAddress(e.target.value)}
+              placeholder="e.g. 123 Nguyen Trai, District 1"
+            />
           </div>
           <div className="space-y-2">
             <Label>Buyer Name</Label>
             <Input
-              required
+              placeholder="e.g. Nguyen Van B"
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
             />
@@ -242,83 +317,119 @@ export function SellFormDialog({
           <div className="space-y-2">
             <Label>Buyer Phone</Label>
             <Input
+              placeholder="10 digits, e.g. 0987654321"
               value={buyerPhone}
               onChange={(e) => setBuyerPhone(e.target.value)}
             />
           </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Buyer Address</Label>
-            <Textarea
-              value={buyerAddress}
-              onChange={(e) => setBuyerAddress(e.target.value)}
-            />
-          </div>
           <div className="space-y-2">
             <Label>Sell Price</Label>
-            <Input
-              type="number"
-              min={0}
-              required
-              value={sellPrice}
-              onChange={(e) => setSellPrice(e.target.value)}
+            <MoneyInput
+              placeholder="e.g. 2.500.000"
+              valueDigits={sellPrice}
+              onValueDigitsChange={setSellPrice}
             />
           </div>
           <div className="space-y-2">
             <Label>Deposit Amount</Label>
-            <Input
-              type="number"
-              min={0}
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(e.target.value)}
+            <MoneyInput
+              placeholder="e.g. 500.000"
+              valueDigits={depositAmount}
+              onValueDigitsChange={setDepositAmount}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Shipping Fee</Label>
-            <Input
-              type="number"
-              min={0}
-              value={shippingFee}
-              onChange={(e) => setShippingFee(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Shipping Paid By</Label>
-            <Select
-              value={shippingPaidBy}
-              onValueChange={(v) => setShippingPaidBy(v as "seller" | "buyer" | "")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="seller">seller</SelectItem>
-                <SelectItem value="buyer">buyer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {sellType === "SHIP" && (
+            <>
+              <div className="space-y-2">
+                <Label>Shipping Fee</Label>
+                <MoneyInput
+                  placeholder="e.g. 50.000"
+                  valueDigits={shippingFee}
+                  onValueDigitsChange={setShippingFee}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Shipping Paid By</Label>
+                <Select
+                  value={shippingPaidBy}
+                  onValueChange={(v) =>
+                    setShippingPaidBy(v as "seller" | "buyer" | "")
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select payer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="seller">seller</SelectItem>
+                    <SelectItem value="buyer">buyer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
           <div className="space-y-2">
             <Label>Sell Date</Label>
             <Input
               type="date"
-              required
               value={sellDate}
               onChange={(e) => setSellDate(e.target.value)}
             />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Images</Label>
-            <Input
+            <input
+              key={sellImageInputKey}
+              id="sell-images-input"
               type="file"
               multiple
               accept="image/*"
-              onChange={(e) => setSellImages(Array.from(e.target.files ?? []))}
+              className="sr-only"
+              onChange={(e) => handleAddSellImages(e.target.files)}
             />
+            <div className="flex flex-wrap items-start gap-3 pt-1">
+              {sellImages.map((file, index) => (
+                <div
+                  key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                  className="relative size-24 shrink-0"
+                >
+                  <img
+                    src={sellImagePreviews[index]}
+                    alt={`Sell preview ${index + 1}`}
+                    className="size-full rounded-md object-cover border border-border/60"
+                  />
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 size-6 rounded-full"
+                    onClick={() => removeSellImage(index)}
+                  >
+                    <X className="size-3" />
+                    <span className="sr-only">Remove image</span>
+                  </Button>
+                </div>
+              ))}
+
+              <label
+                htmlFor="sell-images-input"
+                className="group size-24 justify-self-start rounded-xl border border-dashed border-border/70 bg-card/60 hover:bg-card/90 hover:border-foreground/40 transition-colors grid place-items-center cursor-pointer"
+              >
+                <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
+                  <Plus className="size-5" />
+                  <span className="text-xs uppercase tracking-[0.12em]">
+                    Image
+                  </span>
+                </div>
+              </label>
+            </div>
           </div>
           {sellError && (
-            <p className="text-sm text-destructive md:col-span-2">{sellError}</p>
+            <p className="text-sm text-destructive md:col-span-2">
+              {sellError}
+            </p>
           )}
           <DialogFooter className="md:col-span-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={closeDialogSafely}>
               Cancel
             </Button>
             <Button

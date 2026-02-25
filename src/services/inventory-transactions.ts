@@ -7,6 +7,7 @@ export type CreateBuyInput = {
   seller_name?: string;
   seller_phone?: string;
   seller_address?: string;
+  seller_province_id?: number;
   buy_price?: number;
   buy_date?: string;
   images?: File[];
@@ -20,6 +21,7 @@ export type CreateSellInput = {
   buyer_name: string;
   buyer_phone?: string;
   buyer_address?: string;
+  buyer_province_id?: number;
   sell_price: number;
   deposit_amount?: number | null;
   shipping_fee?: number;
@@ -35,6 +37,13 @@ export type CreateTransactionResult = {
   error?: string;
 };
 
+export type SellableBuyTransactionItem = {
+  buy_transaction_id: string;
+  model_name: string;
+  model_image: string | null;
+  serial_or_imei: string;
+};
+
 function normalizePhone(phone?: string) {
   const clean = (phone ?? "").replace(/\D/g, "");
   return clean;
@@ -45,6 +54,80 @@ function validatePhone(phone?: string) {
   const clean = normalizePhone(phone);
   if (clean.length !== 10) return "Phone must be exactly 10 digits";
   return null;
+}
+
+function normalizeProvinceId(value?: number) {
+  if (!Number.isFinite(value)) return null;
+  const normalized = Number(value);
+  return normalized > 0 ? normalized : null;
+}
+
+function inferLegacyCityFromProvinceId(provinceId: number | null) {
+  if (!provinceId) return null;
+  if (provinceId === 1) return "Ha Noi";
+  if (provinceId === 4) return "Da Nang";
+  if (provinceId === 2) return "Sai Gon";
+  return "Other";
+}
+
+export async function getSellableBuyTransactions(params: { storeId: string }) {
+  const { storeId } = params;
+  const { data, error } = await supabase
+    .from("buy_transactions")
+    .select(
+      `
+      id,
+      created_at,
+      sell_transactions (id),
+      devices!inner (
+        id,
+        status,
+        serial_or_imei,
+        models (
+          name,
+          image
+        )
+      )
+    `,
+    )
+    .eq("store_id", storeId)
+    .eq("devices.store_id", storeId)
+    .eq("devices.status", "in_stock")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as Array<{
+    id: string;
+    sell_transactions?: Array<{ id: string }> | null;
+    devices?: {
+      status?: string | null;
+      serial_or_imei?: string | null;
+      models?: { name?: string | null; image?: string | null } | null;
+    } | null;
+  }>;
+
+  const getModelPriority = (name: string) => {
+    const upper = name.trim().toUpperCase();
+    if (upper.startsWith("WF")) return 0;
+    if (upper.startsWith("WH")) return 1;
+    return 2;
+  };
+
+  return rows
+    .filter((row) => (row.sell_transactions?.length ?? 0) === 0)
+    .map((row) => ({
+      buy_transaction_id: row.id,
+      model_name: row.devices?.models?.name ?? "N/A",
+      model_image: row.devices?.models?.image ?? null,
+      serial_or_imei: row.devices?.serial_or_imei ?? "",
+    }))
+    .sort((a, b) => {
+      const pa = getModelPriority(a.model_name);
+      const pb = getModelPriority(b.model_name);
+      if (pa !== pb) return pa - pb;
+      return a.model_name.localeCompare(b.model_name, "vi", { sensitivity: "base" });
+    }) as SellableBuyTransactionItem[];
 }
 
 async function uploadDeviceImages(params: {
@@ -95,6 +178,7 @@ export async function createBuy(
       seller_name,
       seller_phone,
       seller_address,
+      seller_province_id,
       buy_price,
       buy_date,
       images,
@@ -120,6 +204,7 @@ export async function createBuy(
     const normalizedSerial = (serial_or_imei ?? "").trim() || `AUTO-${Date.now()}`;
     const normalizedSellerName = (seller_name ?? "").trim() || "N/A";
     const normalizedSellerAddress = (seller_address ?? "").trim();
+    const normalizedSellerProvinceId = normalizeProvinceId(seller_province_id);
     const normalizedBuyPrice = Number.isFinite(buy_price) ? Number(buy_price) : 0;
     const normalizedBuyDate =
       buy_date && buy_date.trim() ? buy_date : new Date().toISOString().slice(0, 10);
@@ -148,6 +233,7 @@ export async function createBuy(
           store_id: storeId,
           name: normalizedSellerName,
           phone: normalizedPhone || null,
+          province_id: normalizedSellerProvinceId,
           address: normalizedSellerAddress || "",
         })
         .select("id")
@@ -193,6 +279,7 @@ export async function createBuy(
       buy_date: normalizedBuyDate,
       snapshot_name: normalizedSellerName,
       snapshot_phone: normalizedPhone || null,
+      snapshot_province_id: normalizedSellerProvinceId,
       snapshot_address: normalizedSellerAddress || "",
     });
     if (buyError) return { ok: false, error: buyError.message };
@@ -232,6 +319,7 @@ export async function createSell(
       buyer_name,
       buyer_phone,
       buyer_address,
+      buyer_province_id,
       sell_price,
       deposit_amount,
       shipping_fee = 0,
@@ -249,9 +337,6 @@ export async function createSell(
       return { ok: false, error: "Deposit amount must be >= 0" };
     }
     if (shipping_fee < 0) return { ok: false, error: "Shipping fee must be >= 0" };
-    if (sell_type === "DIRECT" && !city) {
-      return { ok: false, error: "City is required for DIRECT sell type" };
-    }
 
     const phoneError = validatePhone(buyer_phone);
     if (phoneError) return { ok: false, error: phoneError };
@@ -263,6 +348,8 @@ export async function createSell(
     if (authError || !user) return { ok: false, error: "Not authenticated" };
 
     const normalizedPhone = normalizePhone(buyer_phone);
+    const normalizedBuyerAddress = (buyer_address ?? "").trim();
+    const normalizedBuyerProvinceId = normalizeProvinceId(buyer_province_id);
 
     let contactId: string | undefined;
     if (normalizedPhone) {
@@ -286,7 +373,8 @@ export async function createSell(
           store_id: storeId,
           name: buyer_name,
           phone: normalizedPhone || null,
-          address: buyer_address || "",
+          province_id: normalizedBuyerProvinceId,
+          address: normalizedBuyerAddress || "",
         })
         .select("id")
         .single();
@@ -324,7 +412,10 @@ export async function createSell(
       buy_transaction_id,
       contact_id: contactId,
       sell_type,
-      city: sell_type === "DIRECT" ? city : null,
+      city:
+        sell_type === "DIRECT"
+          ? city ?? inferLegacyCityFromProvinceId(normalizedBuyerProvinceId)
+          : null,
       sell_price,
       deposit_amount: deposit_amount ?? null,
       shipping_fee,
@@ -332,6 +423,8 @@ export async function createSell(
       sell_date,
       snapshot_name: buyer_name,
       snapshot_phone: normalizedPhone || null,
+      snapshot_province_id: normalizedBuyerProvinceId,
+      snapshot_address: normalizedBuyerAddress || "",
     });
     if (sellError) return { ok: false, error: sellError.message };
 

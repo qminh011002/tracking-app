@@ -9,6 +9,8 @@ interface DashboardStatProps {
   label: string;
   value: string;
   description?: string;
+  unitLabel?: string;
+  animationDelayMs?: number;
   tag?: string;
   icon: React.ElementType;
   intent?: "positive" | "negative" | "neutral";
@@ -19,6 +21,8 @@ export default function DashboardStat({
   label,
   value,
   description,
+  unitLabel,
+  animationDelayMs = 0,
   icon,
   tag,
   intent,
@@ -26,9 +30,7 @@ export default function DashboardStat({
 }: DashboardStatProps) {
   const Icon = icon;
 
-  // Extract prefix, numeric value, and suffix from the value string
   const parseValue = (val: string) => {
-    // Match pattern: optional prefix + number + optional suffix
     const match = val.match(/^([^\d.-]*)([+-]?\d*\.?\d+)([^\d]*)$/);
 
     if (match) {
@@ -56,6 +58,24 @@ export default function DashboardStat({
   };
 
   const { prefix, numericValue, suffix, isNumeric } = parseValue(value);
+  const [displayValue, setDisplayValue] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!isNumeric) return;
+
+    setDisplayValue(0);
+    let frameId = 0;
+    const timeoutId = window.setTimeout(() => {
+      frameId = window.requestAnimationFrame(() => {
+        setDisplayValue(numericValue);
+      });
+    }, animationDelayMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, [animationDelayMs, isNumeric, numericValue]);
 
   return (
     <Card className="relative overflow-hidden">
@@ -67,24 +87,37 @@ export default function DashboardStat({
         <Icon className="size-4 text-muted-foreground" />
       </CardHeader>
 
-      <CardContent className="bg-accent flex-1 pt-2 md:pt-6 overflow-clip relative">
+      <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-6">
         <div className="flex items-center">
-          <span className="text-4xl md:text-5xl font-display">
+          <span className="text-4xl font-display md:text-5xl">
             {isNumeric ? (
               <div className="flex flex-col">
                 <NumberFlow
-                  value={numericValue}
+                  value={displayValue}
                   prefix={prefix}
                   suffix={suffix}
+                  transformTiming={{
+                    duration: 1300,
+                    easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+                  }}
+                  spinTiming={{
+                    duration: 1300,
+                    easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+                  }}
+                  opacityTiming={{
+                    duration: 500,
+                    easing: "ease-out",
+                  }}
+                  trend={numericValue >= 0 ? 1 : -1}
                 />
-                <span className="text-sm">vnđ</span>
+                {unitLabel ? <span className="text-sm">{unitLabel}</span> : null}
               </div>
             ) : (
               value
             )}
           </span>
           {tag && (
-            <Badge variant="default" className="uppercase ml-3">
+            <Badge variant="default" className="ml-3 uppercase">
               {tag}
             </Badge>
           )}
@@ -92,16 +125,15 @@ export default function DashboardStat({
 
         {description && (
           <div className="justify-between">
-            <p className="text-xs md:text-sm font-medium text-muted-foreground tracking-wide">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground md:text-sm">
               {description}
             </p>
           </div>
         )}
 
-        {/* Marquee Animation */}
         {direction && (
           <div>
-            <div className="absolute top-0 right-0 w-14 h-full pointer-events-none overflow-hidden group">
+            <div className="group pointer-events-none absolute right-0 top-0 h-full w-14 overflow-hidden">
               <div
                 className={cn(
                   "flex flex-col transition-all duration-500",
@@ -147,8 +179,8 @@ interface ArrowProps {
 }
 
 const Arrow = ({ direction, index }: ArrowProps) => {
-  const staggerDelay = index * 0.15; // Faster stagger
-  const phaseDelay = (index % 3) * 0.8; // Different phase groups
+  const staggerDelay = index * 0.15;
+  const phaseDelay = (index % 3) * 0.8;
 
   return (
     <span
@@ -158,10 +190,8 @@ const Arrow = ({ direction, index }: ArrowProps) => {
         animationTimingFunction: "cubic-bezier(0.4, 0.0, 0.2, 1)",
       }}
       className={cn(
-        "text-center text-5xl size-16 font-display leading-none block",
-        "transition-all duration-700 ease-out",
-        "animate-marquee-pulse",
-
+        "block size-16 text-center font-display text-5xl leading-none",
+        "animate-marquee-pulse transition-all duration-700 ease-out",
         "will-change-transform",
       )}
     >

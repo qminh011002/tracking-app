@@ -75,7 +75,7 @@ const data = {
         },
         {
           title: "Warranty Checking",
-          url: "/warranty",
+          url: "/warranty-checking",
           icon: GearIcon,
           isActive: false,
           locked: false,

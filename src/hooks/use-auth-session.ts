@@ -1,6 +1,8 @@
 import * as React from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys, useAuthSessionQuery } from "@/src/queries/hooks";
 
 const AUTH_JWT_KEY = "auth_jwt_token";
 
@@ -17,41 +19,29 @@ export function getStoredJwtToken() {
 }
 
 export function useAuthSession() {
-  const [session, setSession] = React.useState<Session | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const queryClient = useQueryClient();
+  const { data: session, isLoading } = useAuthSessionQuery();
 
   React.useEffect(() => {
-    let mounted = true;
-
-    const init = async () => {
-      const {
-        data: { session: currentSession },
-      } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setSession(currentSession);
-      syncJwtToken(currentSession);
-      setLoading(false);
-    };
-
-    void init();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession);
+      queryClient.setQueryData(queryKeys.auth.session, currentSession);
       syncJwtToken(currentSession);
-      setLoading(false);
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
+
+  React.useEffect(() => {
+    syncJwtToken((session as Session | null) ?? null);
+  }, [session]);
 
   return {
-    session,
-    loading,
-    jwt: session?.access_token ?? null,
+    session: (session as Session | null) ?? null,
+    loading: isLoading,
+    jwt: (session as Session | null)?.access_token ?? null,
   };
 }

@@ -9,35 +9,42 @@ type InventoryActionsProps = {
   onCreated: () => void;
 };
 
-export function InventoryActions({ storeId, onCreated }: InventoryActionsProps) {
+export function InventoryActions({
+  storeId,
+  onCreated,
+}: InventoryActionsProps) {
   const [buyOpen, setBuyOpen] = React.useState(false);
   const [sellOpen, setSellOpen] = React.useState(false);
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex justify-end items-center">
+        {/* BUY */}
         <Button
-          type="button"
-          size="lg"
-          className="hover:cursor-pointer bg-yellow-400 text-lg rounded-sm text-black hover:bg-yellow-300"
+          size={"lg"}
           onClick={() => setBuyOpen(true)}
           disabled={!storeId}
+          className="pl-6 pr-11 bg-yellow-400 rounded-l-sm! hover:bg-yellow-500 text-black font-mono py-3 text-xl font-semibold rounded-none z-10"
+          style={{
+            clipPath: "polygon(0 0, 88% 0, 75% 100%, 0% 100%)",
+          }}
         >
-          <Plus className="size-6" />
           Buy
         </Button>
+
+        {/* SELL */}
         <Button
-          type="button"
-          size="lg"
-          className="hover:cursor-pointer bg-blue-600 text-lg text-white rounded-sm hover:bg-blue-500"
+          size={"lg"}
           onClick={() => setSellOpen(true)}
           disabled={!storeId}
+          className="-ml-10 pl-11 pr-5 text-xl font-semibold font-mono rounded-r-sm! rounded-none z-20"
+          style={{
+            clipPath: "polygon(25% 0, 100% 0, 100% 100%, 12% 100%)",
+          }}
         >
-          <Minus className="size-6" />
           Sell
         </Button>
       </div>
-
       <BuyFormDialog
         storeId={storeId}
         open={buyOpen}

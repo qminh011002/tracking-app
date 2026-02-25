@@ -3,16 +3,14 @@ import { useNavigate } from "react-router-dom";
 import DashboardPageLayout from "@/components/dashboard/layout";
 import ProcessorIcon from "@/components/icons/proccesor";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search } from "lucide-react";
 import {
   InventoryCard,
@@ -23,31 +21,31 @@ import { InventoryDetailDialog } from "@/components/inventory/inventory-detail-d
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useStoreId } from "@/src/hooks/use-store-id";
 import {
-  getInventoryList,
   type InventoryItem as SupabaseInventoryItem,
+  type InventorySortBy,
 } from "@/src/services/inventory";
+import type { ModelItem } from "@/src/services/models";
+import type { ProvinceItem } from "@/src/services/provinces";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  EMPTY_INVENTORY_FILTERS,
+  InventoryFilterPopover,
+  type InventoryFilterDraft,
+  toInventoryListFilters,
+} from "@/src/components/inventory/inventory-filter-popover";
+import { InventoryPaginationControls } from "@/src/components/inventory/inventory-pagination-controls";
 import { InventoryActions } from "@/src/components/inventory/inventory-actions";
+import {
+  sortModelsForPicker,
+  useInventoryListQuery,
+  useModelsQuery,
+  useProvincesQuery,
+} from "@/src/queries/hooks";
 
 type InventoryFilter = "all" | InventoryStatus;
 
 const ITEMS_PER_PAGE = 9;
-
-function buildPageItems(current: number, total: number) {
-  if (total <= 5) {
-    return Array.from({ length: total }, (_, index) => index + 1);
-  }
-
-  if (current <= 3) {
-    return [1, 2, 3, "ellipsis-right", total] as const;
-  }
-
-  if (current >= total - 2) {
-    return [1, "ellipsis-left", total - 2, total - 1, total] as const;
-  }
-
-  return [1, "ellipsis-left", current, "ellipsis-right", total] as const;
-}
+const SEARCH_DEBOUNCE_MS = 300;
 
 function formatDate(value?: string) {
   if (!value) return "-";
@@ -65,16 +63,26 @@ function toCardItem(item: SupabaseInventoryItem): InventoryCardItem {
     modelImage: item.model_image,
     images: item.images.map((x) => x.image_url),
     buyInfo: {
+      transactionId: item.buy?.id,
       amount: item.buy?.buy_price ?? 0,
       name: item.buy?.snapshot_name ?? "N/A",
       phone: item.buy?.snapshot_phone ?? "-",
+      provinceId: item.buy?.snapshot_province_id ?? null,
+      province: item.buy?.snapshot_province_name ?? "-",
+      addressDetail: item.buy?.snapshot_address ?? "",
       date: formatDate(item.buy?.buy_date),
+      dateRaw: item.buy?.buy_date,
     },
     sellInfo: {
+      transactionId: item.sell?.id,
       amount: item.sell?.sell_price ?? null,
       name: item.sell?.snapshot_name ?? "Pending",
       phone: item.sell?.snapshot_phone ?? "-",
+      provinceId: item.sell?.snapshot_province_id ?? null,
+      province: item.sell?.snapshot_province_name ?? "-",
+      addressDetail: item.sell?.snapshot_address ?? "",
       date: formatDate(item.sell?.sell_date),
+      dateRaw: item.sell?.sell_date,
     },
   };
 }
@@ -119,63 +127,76 @@ export default function InventoryPage() {
   const navigate = useNavigate();
   const { storeId, loading: loadingStoreId } = useStoreId();
 
+  const [queryInput, setQueryInput] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [filter, setFilter] = React.useState<InventoryFilter>("all");
+  const [sortBy, setSortBy] = React.useState<InventorySortBy>("in_stock_first");
   const [page, setPage] = React.useState(1);
+  const [appliedFilters, setAppliedFilters] =
+    React.useState<InventoryFilterDraft>(EMPTY_INVENTORY_FILTERS);
   const [selectedItem, setSelectedItem] =
     React.useState<InventoryCardItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-  const [items, setItems] = React.useState<InventoryCardItem[]>([]);
-  const [totalItems, setTotalItems] = React.useState(0);
-  const [totalPages, setTotalPages] = React.useState(1);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [reloadTick, setReloadTick] = React.useState(0);
-
   React.useEffect(() => {
     setPage(1);
-  }, [query, filter]);
+  }, [query, filter, sortBy, appliedFilters]);
 
   React.useEffect(() => {
-    if (!storeId) return;
+    const timeoutId = window.setTimeout(() => {
+      setQuery(queryInput.trim());
+    }, SEARCH_DEBOUNCE_MS);
 
-    let active = true;
-    setLoading(true);
-    setError(null);
+    return () => window.clearTimeout(timeoutId);
+  }, [queryInput]);
 
-    void getInventoryList({
-      storeId,
-      status: filter,
-      searchTerm: query,
-      page,
-      pageSize: ITEMS_PER_PAGE,
-    })
-      .then((result) => {
-        if (!active) return;
-        setItems(result.items.map(toCardItem));
-        setTotalItems(result.meta.totalItems);
-        setTotalPages(result.meta.totalPages);
-        setPage(result.meta.page);
-      })
-      .catch((err: unknown) => {
-        if (!active) return;
-        setError(
-          err instanceof Error ? err.message : "Failed to load inventory",
-        );
-        setItems([]);
-        setTotalItems(0);
-        setTotalPages(1);
-      })
-      .finally(() => {
-        if (!active) return;
-        setLoading(false);
-      });
+  const { data: modelsData = [], isLoading: modelsLoading } = useModelsQuery({
+    storeId,
+    searchTerm: "",
+  });
+  const { data: provincesData = [], isLoading: provincesLoading } =
+    useProvincesQuery(Boolean(storeId));
+  const models = React.useMemo(
+    () => sortModelsForPicker(modelsData as ModelItem[]),
+    [modelsData],
+  );
+  const provinces = provincesData as ProvinceItem[];
+  const inventoryFilters = React.useMemo(
+    () => toInventoryListFilters(appliedFilters),
+    [appliedFilters],
+  );
 
-    return () => {
-      active = false;
-    };
-  }, [storeId, query, filter, page, reloadTick]);
+  const {
+    data,
+    isLoading: loading,
+    error,
+  } = useInventoryListQuery({
+    storeId,
+    status: filter,
+    sortBy,
+    searchTerm: query,
+    page,
+    pageSize: ITEMS_PER_PAGE,
+    filters: inventoryFilters,
+  });
+
+  const items = React.useMemo(
+    () => (data?.items ?? []).map(toCardItem),
+    [data],
+  );
+  const totalItems = data?.meta.totalItems ?? 0;
+  const totalPages = data?.meta.totalPages ?? 1;
+
+  React.useEffect(() => {
+    if (!data?.meta.page) return;
+    setPage(data.meta.page);
+  }, [data?.meta.page]);
+
+  React.useEffect(() => {
+    if (!selectedItem) return;
+    const nextSelected = items.find((entry) => entry.id === selectedItem.id);
+    if (nextSelected) setSelectedItem(nextSelected);
+  }, [items, selectedItem]);
 
   return (
     <DashboardPageLayout
@@ -183,23 +204,30 @@ export default function InventoryPage() {
         title: "Inventory",
         icon: ProcessorIcon,
         actions: (
-          <InventoryActions
-            storeId={storeId}
-            onCreated={() => setReloadTick((prev) => prev + 1)}
-          />
+          <InventoryActions storeId={storeId} onCreated={() => undefined} />
         ),
       }}
     >
       <div className="space-y-4">
         <div className="flex flex-col xl:flex-row gap-3 xl:items-center xl:justify-between">
-          <div className="relative w-full xl:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search model, IMEI, contact..."
-              className="pl-9 bg-card border-border/60"
+          <div className="flex w-full items-center gap-2 xl:max-w-3xl">
+            <InventoryFilterPopover
+              appliedFilters={appliedFilters}
+              onApplyFilters={setAppliedFilters}
+              models={models}
+              modelsLoading={modelsLoading}
+              provinces={provinces}
+              provincesLoading={provincesLoading}
             />
+            <div className="relative w-full xl:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                value={queryInput}
+                onChange={(event) => setQueryInput(event.target.value)}
+                placeholder="Search model, IMEI, contact..."
+                className="pl-9 bg-card border-border/60"
+              />
+            </div>
           </div>
 
           <Tabs
@@ -212,6 +240,20 @@ export default function InventoryPage() {
               <TabsTrigger value="sold">Sold</TabsTrigger>
             </TabsList>
           </Tabs>
+          <Select
+            value={sortBy}
+            onValueChange={(value) => setSortBy(value as InventorySortBy)}
+          >
+            <SelectTrigger className="w-42.5 bg-card border-none">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_desc">Created</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="in_stock_first">In stock</SelectItem>
+              <SelectItem value="stock_age_desc">Longest stock</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="text-xs md:text-sm text-muted-foreground uppercase tracking-[0.12em]">
@@ -227,35 +269,37 @@ export default function InventoryPage() {
 
         {error && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-4 text-sm text-destructive">
-            {error}
+            {error instanceof Error
+              ? error.message
+              : "Failed to load inventory"}
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {loading
             ? Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-                <InventoryCardSkeleton key={`inventory-skeleton-${index}`} />
-              ))
+              <InventoryCardSkeleton key={`inventory-skeleton-${index}`} />
+            ))
             : items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="h-full w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  onClick={() => {
-                    const isDesktop = window.matchMedia(
-                      "(min-width: 1024px)",
-                    ).matches;
-                    if (!isDesktop) {
-                      navigate(`/inventory/${item.id}`);
-                      return;
-                    }
-                    setSelectedItem(item);
-                    setIsDialogOpen(true);
-                  }}
-                >
-                  <InventoryCard item={item} />
-                </button>
-              ))}
+              <button
+                key={item.id}
+                type="button"
+                className="h-full w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                onClick={() => {
+                  const isDesktop = window.matchMedia(
+                    "(min-width: 1024px)",
+                  ).matches;
+                  if (!isDesktop) {
+                    navigate(`/inventory/${item.id}`);
+                    return;
+                  }
+                  setSelectedItem(item);
+                  setIsDialogOpen(true);
+                }}
+              >
+                <InventoryCard item={item} />
+              </button>
+            ))}
         </div>
 
         {!loading && items.length === 0 && !error && storeId && (
@@ -264,58 +308,11 @@ export default function InventoryPage() {
           </div>
         )}
 
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                aria-disabled={page === 1}
-                className={page === 1 ? "pointer-events-none opacity-40" : ""}
-                onClick={(event) => {
-                  event.preventDefault();
-                  if (page === 1) return;
-                  setPage((prev) => Math.max(1, prev - 1));
-                }}
-              />
-            </PaginationItem>
-
-            {buildPageItems(page, totalPages).map((entry, index) =>
-              typeof entry === "number" ? (
-                <PaginationItem key={entry}>
-                  <PaginationLink
-                    href="#"
-                    isActive={entry === page}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setPage(entry);
-                    }}
-                  >
-                    {entry}
-                  </PaginationLink>
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={`${entry}-${index}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ),
-            )}
-
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                aria-disabled={page === totalPages}
-                className={
-                  page === totalPages ? "pointer-events-none opacity-40" : ""
-                }
-                onClick={(event) => {
-                  event.preventDefault();
-                  if (page === totalPages) return;
-                  setPage((prev) => Math.min(totalPages, prev + 1));
-                }}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+        <InventoryPaginationControls
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       </div>
 
       <InventoryDetailDialog
@@ -326,7 +323,7 @@ export default function InventoryPage() {
           setIsDialogOpen(open);
           if (!open) setSelectedItem(null);
         }}
-        onDeleted={() => setReloadTick((prev) => prev + 1)}
+        onDeleted={() => undefined}
       />
     </DashboardPageLayout>
   );

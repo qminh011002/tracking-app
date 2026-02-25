@@ -11,20 +11,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { createBuy } from "@/src/services/inventory-transactions";
-import { getModels, type ModelItem } from "@/src/services/models";
+import { type ModelItem } from "@/src/services/models";
+import { type ProvinceItem } from "@/src/services/provinces";
+import { ModelCombobox } from "@/src/components/inventory/model-combobox";
+import { MoneyInput } from "@/src/components/inventory/money-input";
+import { ProvinceCombobox } from "@/src/components/inventory/province-combobox";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  sortModelsForPicker,
+  useCreateBuyMutation,
+  useModelsQuery,
+  useProvincesQuery,
+} from "@/src/queries/hooks";
 
 type BuyFormDialogProps = {
   storeId: string;
@@ -55,6 +56,7 @@ const buyFormSchema = z.object({
     .refine((value) => !value || /^\d{10}$/.test(value), {
       message: "Seller phone must be exactly 10 digits",
     }),
+  sellerProvinceId: z.string().min(1, "Province is required"),
   sellerAddress: z.string().optional(),
   buyDate: z
     .string()
@@ -80,6 +82,7 @@ const defaultValues: BuyFormValues = {
   note: "",
   sellerName: "",
   sellerPhone: "",
+  sellerProvinceId: "",
   sellerAddress: "",
   buyDate: "",
   buyPriceDigits: "",
@@ -91,14 +94,19 @@ export function BuyFormDialog({
   onOpenChange,
   onCreated,
 }: BuyFormDialogProps) {
-  const [buyLoading, setBuyLoading] = React.useState(false);
   const [buyError, setBuyError] = React.useState<string | null>(null);
-  const [models, setModels] = React.useState<ModelItem[]>([]);
-  const [modelsLoading, setModelsLoading] = React.useState(false);
   const [buyImages, setBuyImages] = React.useState<File[]>([]);
   const [buyImageInputKey, setBuyImageInputKey] = React.useState(0);
+  const createBuyMutation = useCreateBuyMutation();
+
+  const buyLoading = createBuyMutation.isPending;
+  const { data: modelsData = [], isLoading: modelsLoading } = useModelsQuery({
+    storeId,
+    searchTerm: "",
+  });
+  const { data: provincesData = [], isLoading: provincesLoading } =
+    useProvincesQuery(open);
   const {
-    control,
     register,
     handleSubmit,
     setValue,
@@ -121,57 +129,31 @@ export function BuyFormDialog({
     };
   }, [buyImagePreviews]);
 
-  const orderedModels = React.useMemo(() => {
-    const getPriority = (name: string) => {
-      const upper = name.trim().toUpperCase();
-      if (upper.startsWith("WF")) return 0;
-      if (upper.startsWith("WH")) return 1;
-      return 2;
-    };
-
-    return [...models].sort((a, b) => {
-      const pa = getPriority(a.name);
-      const pb = getPriority(b.name);
-      if (pa !== pb) return pa - pb;
-      return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
-    });
-  }, [models]);
-
-  React.useEffect(() => {
-    if (!open || !storeId) return;
-    let active = true;
-    setModelsLoading(true);
-    void getModels({ storeId, searchTerm: "" })
-      .then((list) => {
-        if (!active) return;
-        setModels(list);
-      })
-      .catch(() => {
-        if (!active) return;
-        setModels([]);
-      })
-      .finally(() => {
-        if (!active) return;
-        setModelsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [open, storeId]);
-
-  const formatMoneyInput = (digits: string) => {
-    if (!digits) return "";
-    const value = Number(digits);
-    if (Number.isNaN(value)) return "";
-    return value.toLocaleString("vi-VN");
-  };
+  const orderedModels = React.useMemo(
+    () => sortModelsForPicker(modelsData as ModelItem[]),
+    [modelsData],
+  );
+  const provinces = provincesData as ProvinceItem[];
 
   const resetBuy = () => {
     reset(defaultValues);
     setBuyImages([]);
     setBuyImageInputKey((prev) => prev + 1);
     setBuyError(null);
+  };
+
+  const closeDialogSafely = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    requestAnimationFrame(() => onOpenChange(false));
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      resetBuy();
+    }
   };
 
   const handleAddBuyImages = (files: FileList | null) => {
@@ -186,22 +168,20 @@ export function BuyFormDialog({
   };
 
   const handleCreateBuy = async (values: BuyFormValues) => {
-    setBuyLoading(true);
     setBuyError(null);
 
-    const result = await createBuy({
+    const result = await createBuyMutation.mutateAsync({
       storeId,
       model_id: values.modelId,
       serial_or_imei: values.note || undefined,
       seller_name: values.sellerName || undefined,
       seller_phone: values.sellerPhone || undefined,
+      seller_province_id: Number(values.sellerProvinceId),
       seller_address: values.sellerAddress || undefined,
       buy_price: Number(values.buyPriceDigits || 0),
       buy_date: values.buyDate,
       images: buyImages,
     });
-
-    setBuyLoading(false);
 
     if (!result.ok) {
       setBuyError(result.error ?? "Failed to create BUY");
@@ -213,8 +193,7 @@ export function BuyFormDialog({
       return;
     }
 
-    onOpenChange(false);
-    resetBuy();
+    closeDialogSafely();
     onCreated();
     toast({
       title: "BUY created",
@@ -223,8 +202,8 @@ export function BuyFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl border-none">
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      <DialogContent className="sm:max-w-2xl border-none max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create BUY</DialogTitle>
           <DialogDescription>
@@ -232,51 +211,18 @@ export function BuyFormDialog({
           </DialogDescription>
         </DialogHeader>
         <form
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-7"
           onSubmit={handleSubmit(handleCreateBuy)}
         >
           <div className="space-y-2 md:col-span-2">
             <Label>Model</Label>
-            <Controller
-              control={control}
-              name="modelId"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full h-10! pl-3">
-                    <SelectValue
-                      placeholder={
-                        modelsLoading ? "Loading models..." : "Select model"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-96 overflow-y-auto">
-                    {orderedModels.map((model) => (
-                      <SelectItem
-                        key={model.id}
-                        value={model.id}
-                        className="hover:bg-accent/80 focus:bg-accent/80"
-                      >
-                        <div className="flex items-center gap-2">
-                          {model.image ? (
-                            <img
-                              src={model.image}
-                              alt={model.name}
-                              loading="lazy"
-                              decoding="async"
-                              className="size-10 rounded-sm object-cover"
-                            />
-                          ) : (
-                            <div className="size-9 rounded-sm bg-muted/40" />
-                          )}
-                          <span className="text-[15px] font-medium">
-                            {model.name}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+            <ModelCombobox
+              value={watch("modelId")}
+              onChange={(next) =>
+                setValue("modelId", next, { shouldValidate: true })
+              }
+              models={orderedModels}
+              loading={modelsLoading}
             />
             {errors.modelId && (
               <p className="text-xs text-destructive">
@@ -319,22 +265,35 @@ export function BuyFormDialog({
               </p>
             )}
           </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Seller Address (Optional)</Label>
-            <Textarea
+          <div className="space-y-2">
+            <Label>Seller Province *</Label>
+            <ProvinceCombobox
+              value={watch("sellerProvinceId")}
+              onChange={(next) =>
+                setValue("sellerProvinceId", next, { shouldValidate: true })
+              }
+              provinces={provinces}
+              loading={provincesLoading}
+            />
+            {errors.sellerProvinceId && (
+              <p className="text-xs text-destructive">
+                {errors.sellerProvinceId.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>Seller Address Detail (Optional)</Label>
+            <Input
               placeholder="e.g. 123 Nguyen Trai, District 1"
               {...register("sellerAddress")}
             />
           </div>
           <div className="space-y-2">
             <Label>Buy Price</Label>
-            <Input
-              inputMode="numeric"
+            <MoneyInput
               placeholder="e.g. 2.000.000"
-              value={formatMoneyInput(watch("buyPriceDigits"))}
-              onChange={(e) =>
-                setValue("buyPriceDigits", e.target.value.replace(/\D/g, ""))
-              }
+              valueDigits={watch("buyPriceDigits")}
+              onValueDigitsChange={(next) => setValue("buyPriceDigits", next)}
             />
             {errors.buyPriceDigits && (
               <p className="text-xs text-destructive">
@@ -389,7 +348,7 @@ export function BuyFormDialog({
 
               <label
                 htmlFor="buy-images-input"
-                className="group size-24 justify-self-start rounded-xl border border-dashed border-border/70 bg-card/60 hover:bg-card/90 hover:border-foreground/40 transition-colors grid place-items-center cursor-pointer"
+                className="group size-24 justify-self-start rounded-xl border border-dashed border-border bg-card/60 hover:bg-card/90 hover:border-foreground/40 transition-colors grid place-items-center cursor-pointer"
               >
                 <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
                   <Plus className="size-5" />
@@ -405,11 +364,7 @@ export function BuyFormDialog({
             <p className="text-sm text-destructive md:col-span-2">{buyError}</p>
           )}
           <DialogFooter className="md:col-span-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={closeDialogSafely}>
               Cancel
             </Button>
             <Button

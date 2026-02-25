@@ -4,14 +4,24 @@ import {
   ChevronLeft,
   ChevronRight,
   Images,
+  MapPin,
   Pencil,
   Phone,
+  Plus,
   Tag,
   Trash2,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +31,15 @@ import {
 import { cn } from "@/lib/utils";
 import type { InventoryItem } from "@/components/inventory/inventory-card";
 import { ConfirmDialog } from "@/src/components/common/confirm-dialog";
-import { deleteInventoryById } from "@/src/services/inventory";
+import { ProvinceCombobox } from "@/src/components/inventory/province-combobox";
+import {
+  useDeleteInventoryMutation,
+  useProvincesQuery,
+  useUploadInventoryImagesMutation,
+  useUpdateInventoryStatusMutation,
+  useUpdateBuyTransactionMutation,
+  useUpdateSellTransactionMutation,
+} from "@/src/queries/hooks";
 import { toast } from "@/hooks/use-toast";
 
 function formatMoney(value: number | null) {
@@ -32,6 +50,75 @@ function formatMoney(value: number | null) {
 function netProfit(item: InventoryItem) {
   if (item.sellInfo.amount === null) return null;
   return item.sellInfo.amount - item.buyInfo.amount;
+}
+
+function formatAddress(addressDetail: string, province: string) {
+  const detail = addressDetail.trim();
+  const provinceName = province.trim();
+  if (detail && provinceName && provinceName !== "-") return `${detail}, ${provinceName}`;
+  if (detail) return detail;
+  if (provinceName && provinceName !== "-") return provinceName;
+  return "-";
+}
+
+function toDateInputValue(value?: string) {
+  if (!value || value === "-") return "";
+  const match = value.match(/^\d{4}-\d{2}-\d{2}$/);
+  if (match) return value;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+}
+
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "");
+}
+
+function validatePhone(phone: string) {
+  const clean = normalizePhone(phone);
+  if (!clean) return null;
+  if (clean.length !== 10) return "Phone must be exactly 10 digits";
+  return null;
+}
+
+type EditableTransactionForm = {
+  buy: {
+    amount: string;
+    date: string;
+    name: string;
+    phone: string;
+    addressDetail: string;
+    provinceId: string;
+  };
+  sell: {
+    amount: string;
+    date: string;
+    name: string;
+    phone: string;
+    addressDetail: string;
+    provinceId: string;
+  };
+};
+
+function createEditForm(item: InventoryItem): EditableTransactionForm {
+  return {
+    buy: {
+      amount: String(item.buyInfo.amount ?? 0),
+      date: toDateInputValue(item.buyInfo.dateRaw ?? item.buyInfo.date),
+      name: item.buyInfo.name === "N/A" ? "" : item.buyInfo.name,
+      phone: item.buyInfo.phone === "-" ? "" : item.buyInfo.phone,
+      addressDetail: item.buyInfo.addressDetail ?? "",
+      provinceId: item.buyInfo.provinceId ? String(item.buyInfo.provinceId) : "",
+    },
+    sell: {
+      amount: item.sellInfo.amount === null ? "" : String(item.sellInfo.amount),
+      date: toDateInputValue(item.sellInfo.dateRaw ?? item.sellInfo.date),
+      name: item.sellInfo.name === "Pending" ? "" : item.sellInfo.name,
+      phone: item.sellInfo.phone === "-" ? "" : item.sellInfo.phone,
+      addressDetail: item.sellInfo.addressDetail ?? "",
+      provinceId: item.sellInfo.provinceId ? String(item.sellInfo.provinceId) : "",
+    },
+  };
 }
 
 type InventoryDetailDialogProps = {
@@ -55,9 +142,29 @@ export function InventoryDetailDialog({
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
-  const [deleting, setDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editError, setEditError] = React.useState<string | null>(null);
+  const [pendingBuyImages, setPendingBuyImages] = React.useState<File[]>([]);
+  const [pendingSellImages, setPendingSellImages] = React.useState<File[]>([]);
+  const [form, setForm] = React.useState<EditableTransactionForm | null>(
+    item ? createEditForm(item) : null,
+  );
+  const deleteInventoryMutation = useDeleteInventoryMutation();
+  const updateBuyMutation = useUpdateBuyTransactionMutation();
+  const updateSellMutation = useUpdateSellTransactionMutation();
+  const uploadImagesMutation = useUploadInventoryImagesMutation();
+  const updateStatusMutation = useUpdateInventoryStatusMutation();
+  const { data: provincesData = [], isLoading: provincesLoading } =
+    useProvincesQuery(Boolean(open && storeId));
+  const deleting = deleteInventoryMutation.isPending;
+  const saving =
+    updateBuyMutation.isPending ||
+    updateSellMutation.isPending ||
+    uploadImagesMutation.isPending;
+  const updatingStatus = updateStatusMutation.isPending;
   const profit = item ? netProfit(item) : null;
+  const [statusValue, setStatusValue] = React.useState(item?.status ?? "in_stock");
 
   const openLightboxAt = React.useCallback((index: number) => {
     setActiveImageIndex(index);
@@ -99,10 +206,57 @@ export function InventoryDetailDialog({
     setIsLightboxOpen(false);
     setDeleteConfirmOpen(false);
     setDeleteError(null);
-    setDeleting(false);
-  }, [item?.id]);
+    setIsEditing(false);
+    setEditError(null);
+    setPendingBuyImages([]);
+    setPendingSellImages([]);
+    setForm(item ? createEditForm(item) : null);
+    setStatusValue(item?.status ?? "in_stock");
+  }, [item, item?.id]);
+
+  React.useEffect(() => {
+    if (!item || provincesData.length === 0) return;
+    setForm((prev) => {
+      if (!prev) return prev;
+      const findProvinceId = (provinceName: string) => {
+        const found = provincesData.find((province) => province.name === provinceName);
+        return found ? String(found.id) : "";
+      };
+      return {
+        ...prev,
+        buy: {
+          ...prev.buy,
+          provinceId: prev.buy.provinceId || findProvinceId(item.buyInfo.province),
+        },
+        sell: {
+          ...prev.sell,
+          provinceId: prev.sell.provinceId || findProvinceId(item.sellInfo.province),
+        },
+      };
+    });
+  }, [item, provincesData]);
 
   const previewImages = images.slice(0, 3);
+  const buyImagePreviews = React.useMemo(
+    () => pendingBuyImages.map((file) => URL.createObjectURL(file)),
+    [pendingBuyImages],
+  );
+  const sellImagePreviews = React.useMemo(
+    () => pendingSellImages.map((file) => URL.createObjectURL(file)),
+    [pendingSellImages],
+  );
+
+  React.useEffect(() => {
+    return () => {
+      buyImagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [buyImagePreviews]);
+
+  React.useEffect(() => {
+    return () => {
+      sellImagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [sellImagePreviews]);
 
   if (!item) return null;
 
@@ -111,10 +265,9 @@ export function InventoryDetailDialog({
       setDeleteError("Missing store ID");
       return;
     }
-    setDeleting(true);
     setDeleteError(null);
     try {
-      await deleteInventoryById({ storeId, id: item.id });
+      await deleteInventoryMutation.mutateAsync({ storeId, id: item.id });
       setDeleteConfirmOpen(false);
       toast({
         title: "Inventory deleted",
@@ -133,8 +286,133 @@ export function InventoryDetailDialog({
         title: "Delete failed",
         description: message,
       });
-    } finally {
-      setDeleting(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!item || !form) return;
+    if (!storeId) {
+      setEditError("Missing store ID");
+      return;
+    }
+    if (!item.buyInfo.transactionId) {
+      setEditError("Missing BUY transaction ID");
+      return;
+    }
+
+    const buyAmount = Number(form.buy.amount);
+    if (!Number.isFinite(buyAmount) || buyAmount < 0) {
+      setEditError("Buy amount must be a valid non-negative number");
+      return;
+    }
+    if (!form.buy.date) {
+      setEditError("Buy date is required");
+      return;
+    }
+    const buyPhoneError = validatePhone(form.buy.phone);
+    if (buyPhoneError) {
+      setEditError(buyPhoneError);
+      return;
+    }
+
+    if (item.sellInfo.transactionId) {
+      const sellAmount = Number(form.sell.amount);
+      if (!Number.isFinite(sellAmount) || sellAmount < 0) {
+        setEditError("Sell amount must be a valid non-negative number");
+        return;
+      }
+      if (!form.sell.date) {
+        setEditError("Sell date is required");
+        return;
+      }
+      const sellPhoneError = validatePhone(form.sell.phone);
+      if (sellPhoneError) {
+        setEditError(sellPhoneError);
+        return;
+      }
+    }
+
+    setEditError(null);
+
+    try {
+      await updateBuyMutation.mutateAsync({
+        storeId,
+        buyTransactionId: item.buyInfo.transactionId,
+        buy_price: buyAmount,
+        buy_date: form.buy.date,
+        snapshot_name: form.buy.name.trim() || "N/A",
+        snapshot_phone: normalizePhone(form.buy.phone) || undefined,
+        snapshot_address: form.buy.addressDetail.trim(),
+        snapshot_province_id: form.buy.provinceId ? Number(form.buy.provinceId) : null,
+      });
+
+      if (item.sellInfo.transactionId) {
+        await updateSellMutation.mutateAsync({
+          storeId,
+          sellTransactionId: item.sellInfo.transactionId,
+          sell_price: Number(form.sell.amount),
+          sell_date: form.sell.date,
+          snapshot_name: form.sell.name.trim() || "N/A",
+          snapshot_phone: normalizePhone(form.sell.phone) || undefined,
+          snapshot_address: form.sell.addressDetail.trim(),
+          snapshot_province_id: form.sell.provinceId ? Number(form.sell.provinceId) : null,
+        });
+      }
+
+      const allPendingImages = [...pendingBuyImages, ...pendingSellImages];
+      if (allPendingImages.length > 0) {
+        await uploadImagesMutation.mutateAsync({
+          storeId,
+          deviceId: item.id,
+          images: allPendingImages,
+        });
+      }
+
+      toast({
+        title: "Inventory updated",
+        description:
+          allPendingImages.length > 0
+            ? `BUY/SELL information saved and ${allPendingImages.length} image(s) uploaded.`
+            : "BUY/SELL information has been saved.",
+      });
+      setIsEditing(false);
+      setPendingBuyImages([]);
+      setPendingSellImages([]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update inventory";
+      setEditError(message);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: message,
+      });
+    }
+  };
+
+  const handleStatusChange = async (nextStatus: "in_stock" | "sold") => {
+    if (!item || !storeId) return;
+    if (nextStatus === statusValue) return;
+    setStatusValue(nextStatus);
+    try {
+      await updateStatusMutation.mutateAsync({
+        storeId,
+        deviceId: item.id,
+        status: nextStatus,
+      });
+      toast({
+        title: "Status updated",
+        description: `Device marked as ${nextStatus === "sold" ? "Sold" : "In stock"}.`,
+      });
+    } catch (error) {
+      setStatusValue(item.status);
+      const message =
+        error instanceof Error ? error.message : "Failed to update status";
+      toast({
+        variant: "destructive",
+        title: "Update status failed",
+        description: message,
+      });
     }
   };
 
@@ -166,12 +444,30 @@ export function InventoryDetailDialog({
               </div>
             </div>
           </div>
-          <Badge
-            variant={item.status === "sold" ? "secondary" : "outline-success"}
-            className="uppercase px-3 mr-4 py-1 rounded-full text-sm tracking-wide font-semibold shrink-0 mt-1"
-          >
-            {item.status === "sold" ? "Sold" : "In stock"}
-          </Badge>
+          <div className="mr-4 mt-1 shrink-0">
+            <Select
+              value={statusValue}
+              onValueChange={(value) =>
+                handleStatusChange(value as "in_stock" | "sold")
+              }
+              disabled={updatingStatus}
+            >
+              <SelectTrigger
+                className={cn(
+                  "h-8 rounded-full border px-3 text-xs font-semibold uppercase tracking-[0.12em]",
+                  statusValue === "sold"
+                    ? "border-transparent bg-secondary text-secondary-foreground"
+                    : "border-success/60 bg-transparent text-success",
+                )}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in_stock">In stock</SelectItem>
+                <SelectItem value="sold">Sold</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground/60 uppercase tracking-[0.16em]">
           <Tag className="size-3.5" />
@@ -250,116 +546,405 @@ export function InventoryDetailDialog({
         </div>
 
         {/* Details Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          <div className="relative space-y-3">
-            <div className="absolute left-1 top-2.5 bottom-0 w-px bg-success/35" />
-            <div className="flex items-center gap-2">
-              <div className="relative z-10 size-2.5 rounded-full bg-success" />
-              <h3 className="text-sm font-semibold text-foreground">
-                Buy Information
-              </h3>
+        {isEditing && form ? (
+          <div className="space-y-4 pt-2">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Update Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Buy
+                </div>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="Amount"
+                  value={form.buy.amount}
+                  onChange={(event) =>
+                    setForm((prev) =>
+                      prev
+                        ? { ...prev, buy: { ...prev.buy, amount: event.target.value } }
+                        : prev,
+                    )
+                  }
+                />
+                <Input
+                  type="date"
+                  value={form.buy.date}
+                  onChange={(event) =>
+                    setForm((prev) =>
+                      prev ? { ...prev, buy: { ...prev.buy, date: event.target.value } } : prev,
+                    )
+                  }
+                />
+                <Input
+                  placeholder="Contact person"
+                  value={form.buy.name}
+                  onChange={(event) =>
+                    setForm((prev) =>
+                      prev ? { ...prev, buy: { ...prev.buy, name: event.target.value } } : prev,
+                    )
+                  }
+                />
+                <Input
+                  placeholder="Phone"
+                  value={form.buy.phone}
+                  onChange={(event) =>
+                    setForm((prev) =>
+                      prev ? { ...prev, buy: { ...prev.buy, phone: event.target.value } } : prev,
+                    )
+                  }
+                />
+                <Input
+                  placeholder="Address detail"
+                  value={form.buy.addressDetail}
+                  onChange={(event) =>
+                    setForm((prev) =>
+                      prev
+                        ? { ...prev, buy: { ...prev.buy, addressDetail: event.target.value } }
+                        : prev,
+                    )
+                  }
+                />
+                <ProvinceCombobox
+                  value={form.buy.provinceId}
+                  onChange={(value) =>
+                    setForm((prev) =>
+                      prev ? { ...prev, buy: { ...prev.buy, provinceId: value } } : prev,
+                    )
+                  }
+                  provinces={provincesData}
+                  loading={provincesLoading}
+                  placeholder="Buy province"
+                />
+                <div className="space-y-2 pt-1">
+                  <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                    Upload images
+                  </label>
+                  <input
+                    id="buy-edit-images-input"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(event) => {
+                      const nextFiles = Array.from(event.target.files ?? []);
+                      if (nextFiles.length === 0) return;
+                      setPendingBuyImages((prev) => [...prev, ...nextFiles]);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  <div className="mt-2 flex flex-wrap items-start gap-3">
+                    {pendingBuyImages.map((file, index) => (
+                      <div
+                        key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                        className="relative size-20 shrink-0"
+                      >
+                        <img
+                          src={buyImagePreviews[index]}
+                          alt={`Buy edit preview ${index + 1}`}
+                          className="size-full rounded-md object-cover border border-border/60"
+                        />
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="destructive"
+                          className="absolute -top-2 -right-2 size-6 rounded-full"
+                          onClick={() =>
+                            setPendingBuyImages((prev) =>
+                              prev.filter((_, imageIndex) => imageIndex !== index),
+                            )
+                          }
+                        >
+                          <X className="size-3" />
+                          <span className="sr-only">Remove image</span>
+                        </Button>
+                      </div>
+                    ))}
+                    <label
+                      htmlFor="buy-edit-images-input"
+                      className="group size-20 rounded-xl border border-dashed border-border/70 bg-card/60 hover:bg-card/90 hover:border-foreground/40 transition-colors grid place-items-center cursor-pointer"
+                    >
+                      <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
+                        <Plus className="size-4" />
+                        <span className="text-[10px] uppercase tracking-[0.12em]">
+                          Image
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  Sell
+                </div>
+                {item.sellInfo.transactionId ? (
+                  <>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Amount"
+                      value={form.sell.amount}
+                      onChange={(event) =>
+                        setForm((prev) =>
+                          prev
+                            ? { ...prev, sell: { ...prev.sell, amount: event.target.value } }
+                            : prev,
+                        )
+                      }
+                    />
+                    <Input
+                      type="date"
+                      value={form.sell.date}
+                      onChange={(event) =>
+                        setForm((prev) =>
+                          prev
+                            ? { ...prev, sell: { ...prev.sell, date: event.target.value } }
+                            : prev,
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Contact person"
+                      value={form.sell.name}
+                      onChange={(event) =>
+                        setForm((prev) =>
+                          prev
+                            ? { ...prev, sell: { ...prev.sell, name: event.target.value } }
+                            : prev,
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Phone"
+                      value={form.sell.phone}
+                      onChange={(event) =>
+                        setForm((prev) =>
+                          prev
+                            ? { ...prev, sell: { ...prev.sell, phone: event.target.value } }
+                            : prev,
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Address detail"
+                      value={form.sell.addressDetail}
+                      onChange={(event) =>
+                        setForm((prev) =>
+                          prev
+                            ? {
+                              ...prev,
+                              sell: { ...prev.sell, addressDetail: event.target.value },
+                            }
+                            : prev,
+                        )
+                      }
+                    />
+                    <ProvinceCombobox
+                      value={form.sell.provinceId}
+                      onChange={(value) =>
+                        setForm((prev) =>
+                          prev ? { ...prev, sell: { ...prev.sell, provinceId: value } } : prev,
+                        )
+                      }
+                      provinces={provincesData}
+                      loading={provincesLoading}
+                      placeholder="Sell province"
+                    />
+                  </>
+                ) : (
+                  <div className="rounded-md border border-border/60 bg-card px-3 py-4 text-xs text-muted-foreground">
+                    No SELL transaction yet.
+                  </div>
+                )}
+                <div className="space-y-2 pt-1">
+                  <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                    Upload images
+                  </label>
+                  <input
+                    id="sell-edit-images-input"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(event) => {
+                      const nextFiles = Array.from(event.target.files ?? []);
+                      if (nextFiles.length === 0) return;
+                      setPendingSellImages((prev) => [...prev, ...nextFiles]);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  <div className="mt-2 flex flex-wrap items-start gap-3">
+                    {pendingSellImages.map((file, index) => (
+                      <div
+                        key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                        className="relative size-20 shrink-0"
+                      >
+                        <img
+                          src={sellImagePreviews[index]}
+                          alt={`Sell edit preview ${index + 1}`}
+                          className="size-full rounded-md object-cover border border-border/60"
+                        />
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="destructive"
+                          className="absolute -top-2 -right-2 size-6 rounded-full"
+                          onClick={() =>
+                            setPendingSellImages((prev) =>
+                              prev.filter((_, imageIndex) => imageIndex !== index),
+                            )
+                          }
+                        >
+                          <X className="size-3" />
+                          <span className="sr-only">Remove image</span>
+                        </Button>
+                      </div>
+                    ))}
+                    <label
+                      htmlFor="sell-edit-images-input"
+                      className="group size-20 rounded-xl border border-dashed border-border/70 bg-card/60 hover:bg-card/90 hover:border-foreground/40 transition-colors grid place-items-center cursor-pointer"
+                    >
+                      <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
+                        <Plus className="size-4" />
+                        <span className="text-[10px] uppercase tracking-[0.12em]">
+                          Image
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <div className="space-y-3 pl-5 py-2">
-              <div>
-                <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
-                  Amount
-                </div>
-                <div className="text-lg font-bold text-success">
-                  {formatMoney(item.buyInfo.amount)}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
-                  Contact Person
-                </div>
-                <div className="text-sm font-semibold text-foreground">
-                  {item.buyInfo.name}
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Phone className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                <div className="text-xs text-muted-foreground/80">
-                  {item.buyInfo.phone}
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <CalendarDays className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                <div className="text-xs text-muted-foreground/80">
-                  {item.buyInfo.date}
-                </div>
-              </div>
-            </div>
+            {editError && <p className="text-sm text-destructive">{editError}</p>}
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div className="relative space-y-3">
+              <div className="absolute left-1 top-2.5 bottom-0 w-px bg-success/35" />
+              <div className="flex items-center gap-2">
+                <div className="relative z-10 size-2.5 rounded-full bg-success" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Buy Information
+                </h3>
+              </div>
 
-          <div className="relative space-y-3">
-            <div
-              className={cn(
-                "absolute left-1 top-2.5 bottom-0 w-px",
-                item.sellInfo.amount === null
-                  ? "bg-muted-foreground/20"
-                  : "bg-primary/30",
-              )}
-            />
-            <div className="flex items-center gap-2">
+              <div className="space-y-3 pl-5 py-2">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
+                    Amount
+                  </div>
+                  <div className="text-lg font-bold text-success">
+                    {formatMoney(item.buyInfo.amount)}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
+                    Contact Person
+                  </div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {item.buyInfo.name}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Phone className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-xs text-muted-foreground/80">
+                    {item.buyInfo.phone}
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <MapPin className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-xs text-muted-foreground/80 break-words">
+                    {formatAddress(item.buyInfo.addressDetail, item.buyInfo.province)}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <CalendarDays className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-xs text-muted-foreground/80">
+                    {item.buyInfo.date}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative space-y-3">
               <div
                 className={cn(
-                  "relative z-10 size-2.5 rounded-full",
+                  "absolute left-1 top-2.5 bottom-0 w-px",
                   item.sellInfo.amount === null
-                    ? "bg-muted-foreground/40"
-                    : "bg-primary",
+                    ? "bg-muted-foreground/20"
+                    : "bg-primary/30",
                 )}
               />
-              <h3 className="text-sm font-semibold text-foreground">
-                Sell Information
-              </h3>
-            </div>
-
-            <div className="space-y-3 pl-5 py-2">
-              <div>
-                <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
-                  Amount
-                </div>
+              <div className="flex items-center gap-2">
                 <div
                   className={cn(
-                    "text-lg font-bold",
+                    "relative z-10 size-2.5 rounded-full",
                     item.sellInfo.amount === null
-                      ? "text-muted-foreground"
-                      : "text-primary",
+                      ? "bg-muted-foreground/40"
+                      : "bg-primary",
                   )}
-                >
-                  {formatMoney(item.sellInfo.amount)}
-                </div>
+                />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Sell Information
+                </h3>
               </div>
 
-              <div>
-                <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
-                  Contact Person
+              <div className="space-y-3 pl-5 py-2">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
+                    Amount
+                  </div>
+                  <div
+                    className={cn(
+                      "text-lg font-bold",
+                      item.sellInfo.amount === null
+                        ? "text-muted-foreground"
+                        : "text-primary",
+                    )}
+                  >
+                    {formatMoney(item.sellInfo.amount)}
+                  </div>
                 </div>
-                <div className="text-sm font-semibold text-foreground">
-                  {item.sellInfo.name}
-                </div>
-              </div>
 
-              <div className="flex items-start gap-2">
-                <Phone className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                <div className="text-xs text-muted-foreground/80">
-                  {item.sellInfo.phone}
+                <div>
+                  <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
+                    Contact Person
+                  </div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {item.sellInfo.name}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-2">
-                <CalendarDays className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                <div className="text-xs text-muted-foreground/80">
-                  {item.sellInfo.date}
+                <div className="flex items-start gap-2">
+                  <Phone className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-xs text-muted-foreground/80">
+                    {item.sellInfo.phone}
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <MapPin className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-xs text-muted-foreground/80 break-words">
+                    {formatAddress(item.sellInfo.addressDetail, item.sellInfo.province)}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <CalendarDays className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-xs text-muted-foreground/80">
+                    {item.sellInfo.date}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Images Section */}
         <div className="space-y-3 pt-2">
@@ -414,14 +999,45 @@ export function InventoryDetailDialog({
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-4">
-          <Button type="button" variant="outline" disabled>
-            <Pencil className="size-4" />
-            Update
-          </Button>
+          {isEditing ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditError(null);
+                  setPendingBuyImages([]);
+                  setPendingSellImages([]);
+                  setForm(createEditForm(item));
+                }}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsEditing(true);
+                setEditError(null);
+                setForm(createEditForm(item));
+              }}
+            >
+              <Pencil className="size-4" />
+              Update
+            </Button>
+          )}
           <Button
             type="button"
             variant="destructive"
             onClick={() => setDeleteConfirmOpen(true)}
+            disabled={saving}
           >
             <Trash2 className="size-4" />
             Delete
@@ -442,12 +1058,14 @@ export function InventoryDetailDialog({
         </div>
       ) : (
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="sm:max-w-4xl p-0 overflow-hidden border-none bg-background">
+          <DialogContent className="sm:max-w-4xl p-0 border-none bg-background max-h-[90vh] overflow-hidden">
             <DialogTitle className="sr-only">{item.title}</DialogTitle>
             <DialogDescription className="sr-only">
               Inventory detail for {item.title}
             </DialogDescription>
-            {detailContent}
+            <div className="max-h-[90vh] overflow-y-auto">
+              {detailContent}
+            </div>
           </DialogContent>
         </Dialog>
       )}
