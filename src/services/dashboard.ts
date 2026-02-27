@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase";
 type SellRow = {
   sell_price: number | null;
   sell_date: string | null;
-  created_at: string | null;
   buy_transactions: {
     buy_price: number | null;
   } | null;
@@ -22,18 +21,13 @@ function toNumber(value: number | null | undefined) {
   return Number(value);
 }
 
-function isSameMonth(date: Date, year: number, month: number) {
-  return date.getFullYear() === year && date.getMonth() === month;
-}
+export async function getDashboardKpi(params: {
+  storeId: string;
+  fromDate?: string;
+  toDate?: string;
+}): Promise<DashboardKpi> {
+  const { storeId, fromDate, toDate } = params;
 
-function toDate(value: string | null | undefined) {
-  if (!value) return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-export async function getDashboardKpi(params: { storeId: string }): Promise<DashboardKpi> {
-  const { storeId } = params;
   if (!storeId) {
     return {
       totalSales: 0,
@@ -44,13 +38,12 @@ export async function getDashboardKpi(params: { storeId: string }): Promise<Dash
     };
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("sell_transactions")
     .select(
       `
       sell_price,
       sell_date,
-      created_at,
       buy_transactions (
         buy_price
       )
@@ -58,53 +51,34 @@ export async function getDashboardKpi(params: { storeId: string }): Promise<Dash
     )
     .eq("store_id", storeId);
 
+  if (fromDate) query = query.gte("sell_date", fromDate);
+  if (toDate) query = query.lte("sell_date", toDate);
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const rows = (data ?? []) as SellRow[];
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
-  const previousYear = previousMonthDate.getFullYear();
-  const previousMonth = previousMonthDate.getMonth();
 
   let totalSales = 0;
   let totalProfit = 0;
-  let currentMonthSales = 0;
-  let previousMonthSales = 0;
+  let totalBuyOfSold = 0;
 
   for (const row of rows) {
     const sellPrice = toNumber(row.sell_price);
     const buyPrice = toNumber(row.buy_transactions?.buy_price);
-    const soldAt = toDate(row.sell_date) ?? toDate(row.created_at);
 
     totalSales += sellPrice;
     totalProfit += sellPrice - buyPrice;
-
-    if (!soldAt) continue;
-
-    if (isSameMonth(soldAt, currentYear, currentMonth)) {
-      currentMonthSales += sellPrice;
-      continue;
-    }
-
-    if (isSameMonth(soldAt, previousYear, previousMonth)) {
-      previousMonthSales += sellPrice;
-    }
+    totalBuyOfSold += buyPrice;
   }
 
-  const growthRate =
-    previousMonthSales > 0
-      ? ((currentMonthSales - previousMonthSales) / previousMonthSales) * 100
-      : currentMonthSales > 0
-        ? 100
-        : 0;
+  const growthRate = totalBuyOfSold > 0 ? (totalProfit / totalBuyOfSold) * 100 : 0;
 
   return {
     totalSales,
     totalProfit,
     growthRate,
-    currentMonthSales,
-    previousMonthSales,
+    currentMonthSales: 0,
+    previousMonthSales: 0,
   };
 }

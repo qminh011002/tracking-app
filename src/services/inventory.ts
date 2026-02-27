@@ -6,7 +6,8 @@ export type InventorySortBy =
   | "created_desc"
   | "name"
   | "in_stock_first"
-  | "stock_age_desc";
+  | "stock_age_desc"
+  | "buy_date_desc";
 
 export type InventoryItem = {
   id: string;
@@ -223,6 +224,12 @@ function getStockAgeDays(item: InventoryItem) {
   return Math.max(0, diff);
 }
 
+function getBuyDateTime(item: InventoryItem) {
+  const buyDateTime = Date.parse(item.buy?.buy_date ?? "");
+  if (!Number.isNaN(buyDateTime)) return buyDateTime;
+  return Date.parse(item.created_at);
+}
+
 function applySort(items: InventoryItem[], sortBy: InventorySortBy) {
   if (sortBy === "name") {
     return [...items].sort((a, b) => {
@@ -259,6 +266,10 @@ function applySort(items: InventoryItem[], sortBy: InventorySortBy) {
       }
       return Date.parse(b.created_at) - Date.parse(a.created_at);
     });
+  }
+
+  if (sortBy === "buy_date_desc") {
+    return [...items].sort((a, b) => getBuyDateTime(b) - getBuyDateTime(a));
   }
 
   return [...items].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));

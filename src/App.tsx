@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { RequireAuth } from "./components/auth/require-auth";
 import { RootLayout } from "./layouts/root-layout";
+import AnalyticPage from "./pages/analytic";
 import AuthPage from "./pages/auth";
 import DashboardOverview from "./pages/dashboard-overview";
 import DevicePage from "./pages/device";
@@ -21,6 +22,8 @@ export default function App() {
         }
       >
         <Route index element={<DashboardOverview />} />
+        <Route path="analytic" element={<AnalyticPage />} />
+        <Route path="analytics" element={<AnalyticPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="inventory/:id" element={<InventoryDetailPage />} />
         <Route path="warranty-checking" element={<WarrantyCheckingPage />} />

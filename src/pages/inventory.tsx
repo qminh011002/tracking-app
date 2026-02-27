@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search } from "lucide-react";
+import { ArrowDownAZ, Search } from "lucide-react";
 import {
   InventoryCard,
   type InventoryItem as InventoryCardItem,
@@ -249,6 +249,11 @@ export default function InventoryPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="created_desc">Created</SelectItem>
+              <SelectItem value="buy_date_desc">
+                <span className="inline-flex items-center gap-1">
+                  Buy date <ArrowDownAZ className="size-3.5" />
+                </span>
+              </SelectItem>
               <SelectItem value="name">Name</SelectItem>
               <SelectItem value="in_stock_first">In stock</SelectItem>
               <SelectItem value="stock_age_desc">Longest stock</SelectItem>

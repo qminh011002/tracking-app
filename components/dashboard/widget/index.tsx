@@ -38,13 +38,26 @@ export default function Widget({ widgetData }: WidgetProps) {
 
           if (!response.ok) throw new Error("Failed to reverse geocode");
           const data = (await response.json()) as {
+            city?: string;
+            locality?: string;
+            localityInfo?: {
+              administrative?: Array<{ name?: string; order?: number }>;
+            };
             principalSubdivision?: string;
             countryName?: string;
           };
 
+          const city =
+            (data.city ?? "").trim() ||
+            (data.locality ?? "").trim() ||
+            (
+              data.localityInfo?.administrative
+                ?.find((x) => (x.order ?? 0) >= 6)
+                ?.name ?? ""
+            ).trim();
           const province = (data.principalSubdivision ?? "").trim();
           const country = (data.countryName ?? "").trim();
-          const nextLocation = [province, country].filter(Boolean).join(", ");
+          const nextLocation = [city, province, country].filter(Boolean).join(", ");
 
           if (!ignore && nextLocation) {
             setLocationText(nextLocation);

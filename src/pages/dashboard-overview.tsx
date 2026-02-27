@@ -62,6 +62,7 @@ export default function DashboardOverview() {
     {
       label: "GROWTH RATE",
       value: isLoading ? "0%" : formatGrowthRate(kpi?.growthRate ?? 0),
+      unitLabel: undefined,
       description: "VS LAST MONTH",
       icon: iconMap.boom,
       intent:
