@@ -369,7 +369,7 @@ export function BuyFormDialog({
             </Button>
             <Button
               type="submit"
-              className="bg-yellow-400 text-black hover:bg-yellow-300"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={buyLoading}
             >
               {buyLoading ? "Creating..." : "Create BUY"}

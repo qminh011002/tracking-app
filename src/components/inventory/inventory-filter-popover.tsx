@@ -113,12 +113,17 @@ function InventoryFilterPopoverInner({
           type="button"
           variant="outline"
           className={cn(
-            "aspect-square gap-2 border-none bg-[#1F1F1F] px-3 hover:bg-[#262626]",
+            "aspect-square gap-2 border-none bg-card px-3 hover:bg-accent",
             hasActiveFilters &&
-            "bg-blue-600!  text-white hover:bg-blue-600 hover:text-white",
+            "bg-primary! text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
           )}
         >
-          <Filter className={cn("size-4", hasActiveFilters && "fill-current text-white")} />
+          <Filter
+            className={cn(
+              "size-4",
+              hasActiveFilters && "fill-current text-primary-foreground",
+            )}
+          />
 
           {hasActiveFilters && (
             <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
@@ -286,16 +291,16 @@ function InventoryFilterPopoverInner({
           >
             Clear all
           </Button>
-          <Button
-            type="button"
-            onClick={() => {
-              if (invalidDateRange) return;
-              onApplyFilters(draftFilters);
-              setOpen(false);
-            }}
-            className="bg-blue-600 text-white hover:bg-blue-700"
-            disabled={invalidDateRange}
-          >
+            <Button
+              type="button"
+              onClick={() => {
+                if (invalidDateRange) return;
+                onApplyFilters(draftFilters);
+                setOpen(false);
+              }}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={invalidDateRange}
+            >
             Apply filters
           </Button>
         </div>

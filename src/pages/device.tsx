@@ -158,7 +158,7 @@ export default function DevicePage() {
           <Button
             type="button"
             size="lg"
-            className="hover:cursor-pointer bg-yellow-400 text-lg rounded-sm text-black hover:bg-yellow-300"
+            className="hover:cursor-pointer bg-primary text-lg rounded-sm text-primary-foreground hover:bg-primary/90"
             onClick={() => setCreateOpen(true)}
           >
             <Plus className="size-6" />
@@ -200,7 +200,7 @@ export default function DevicePage() {
             {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={`model-skeleton-${index}`}
-                className="rounded-xl bg-[#1D1B1C] p-4"
+                className="rounded-xl bg-card p-4"
               >
                 <div className="flex items-start gap-4">
                   <Skeleton className="h-16 w-16 rounded-lg shrink-0 bg-white/10" />
@@ -225,7 +225,7 @@ export default function DevicePage() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="rounded-xl bg-[#1D1B1C] p-4 transition-colors hover:bg-[#262324]"
+                className="rounded-xl bg-card p-4 transition-colors hover:bg-accent"
               >
                 <div className="flex items-start gap-4">
                   {item.image ? (

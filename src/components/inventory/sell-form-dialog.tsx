@@ -267,8 +267,8 @@ export function SellFormDialog({
                 className={cn(
                   "w-full",
                   sellType === "SHIP"
-                    ? "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:text-yellow-300 dark:border-yellow-900"
-                    : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900",
+                    ? "bg-warning/15 text-warning border-warning/40 hover:bg-warning/20"
+                    : "bg-primary/15 text-primary border-primary/40 hover:bg-primary/20",
                 )}
               >
                 <SelectValue />
@@ -276,13 +276,13 @@ export function SellFormDialog({
               <SelectContent>
                 <SelectItem
                   value="SHIP"
-                  className="text-yellow-300 data-highlighted:bg-yellow-500/20 data-highlighted:text-yellow-200"
+                  className="text-warning data-highlighted:bg-warning/20 data-highlighted:text-warning"
                 >
                   SHIP
                 </SelectItem>
                 <SelectItem
                   value="DIRECT"
-                  className="text-blue-300 data-highlighted:bg-blue-500/20 data-highlighted:text-blue-200"
+                  className="text-primary data-highlighted:bg-primary/20 data-highlighted:text-primary"
                 >
                   DIRECT
                 </SelectItem>
@@ -434,7 +434,7 @@ export function SellFormDialog({
             </Button>
             <Button
               type="submit"
-              className="bg-blue-600 text-white hover:bg-blue-500"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={sellLoading}
             >
               {sellLoading ? "Creating..." : "Create SELL"}

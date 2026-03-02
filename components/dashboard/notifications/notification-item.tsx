@@ -34,13 +34,13 @@ export default function NotificationItem({
   const getTypeColor = (type: Notification["type"]) => {
     switch (type) {
       case "success":
-        return "bg-green-500";
+        return "bg-success";
       case "warning":
-        return "bg-yellow-500";
+        return "bg-warning";
       case "error":
-        return "bg-red-500";
+        return "bg-destructive";
       default:
-        return "bg-blue-500";
+        return "bg-primary";
     }
   };
 

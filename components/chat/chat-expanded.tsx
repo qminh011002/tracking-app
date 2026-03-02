@@ -21,19 +21,19 @@ export default function ChatExpanded({
       initial={{ opacity: 0, y: 20, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.9 }}
-      className="bg-black text-white rounded-lg shadow-xl w-80 max-h-96 overflow-hidden"
+      className="bg-card text-foreground rounded-lg shadow-xl w-80 max-h-96 overflow-hidden border border-border/60"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700">
+      <div className="flex items-center justify-between p-4 border-b border-border/60">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <div className="w-2 h-2 bg-success rounded-full"></div>
           <span className="text-sm font-medium uppercase">ONLINE</span>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={onGoBack}
-          className="text-white hover:bg-gray-800 h-8 w-8 p-0"
+          className="text-foreground hover:bg-accent h-8 w-8 p-0"
         >
           −
         </Button>
@@ -59,8 +59,8 @@ export default function ChatExpanded({
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-700">
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+      <div className="p-4 border-t border-border/60">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>+</span>
           <span>NEW CHAT</span>
         </div>

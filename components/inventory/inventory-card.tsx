@@ -103,7 +103,7 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
               Buy info
             </div>
-            <div className="text-xl font-semibold text-[#FACC15]">
+            <div className="text-xl font-semibold text-warning">
               {formatMoney(item.buyInfo.amount)}
             </div>
             <div className="font-semibold">{item.buyInfo.name}</div>
@@ -146,7 +146,7 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
                   "text-xl font-bold",
                   item.sellInfo.amount === null
                     ? "text-muted-foreground"
-                    : "text-[#3B82F6]",
+                    : "text-primary",
                 )}
               >
                 {formatMoney(item.sellInfo.amount)}

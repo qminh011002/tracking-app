@@ -10,7 +10,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-end">
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-muted-foreground">
           {formatTime(message.timestamp)}
         </span>
       </div>
@@ -18,8 +18,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         className={cn(
           "max-w-xs rounded-lg px-3 py-2 text-sm",
           message.isFromCurrentUser
-            ? "bg-blue-600 text-white ml-auto"
-            : "bg-gray-700 text-white"
+            ? "bg-primary text-primary-foreground ml-auto"
+            : "bg-accent text-foreground"
         )}
       >
         {message.content}

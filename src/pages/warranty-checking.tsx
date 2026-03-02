@@ -57,7 +57,7 @@ function getWarrantyBadgeStyle(warrantyStatus: string, expiryDate: string) {
     return {
       label: "Chua kich hoat",
       variant: "outline" as const,
-      className: "border-blue-500 bg-blue-500/10 text-blue-400",
+      className: "border-primary/50 bg-primary/10 text-primary",
     };
   }
 

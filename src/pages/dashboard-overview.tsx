@@ -65,7 +65,8 @@ export default function DashboardOverview() {
     {
       label: "GROWTH RATE",
       value: isLoading ? "0%" : formatGrowthRate(kpi?.growthRate ?? 0),
-      odometerValue: undefined,
+      odometerValue: isLoading ? 0 : Number((kpi?.growthRate ?? 0).toFixed(1)),
+      odometerFormat: "(,ddd).d",
       unitLabel: undefined,
       description: "VS LAST MONTH",
       icon: iconMap.boom,
@@ -98,6 +99,8 @@ export default function DashboardOverview() {
             key={index}
             label={stat.label}
             value={stat.value}
+            odometerValue={stat.odometerValue}
+            odometerFormat={stat.odometerFormat}
             unitLabel={stat.unitLabel}
             description={stat.description}
             icon={stat.icon}

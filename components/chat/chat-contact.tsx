@@ -16,11 +16,11 @@ export default function ChatContact({
 }: ChatContactProps) {
   return (
     <div
-      className="flex items-center gap-3 p-4 hover:bg-gray-800 cursor-pointer border-b border-gray-800"
+      className="flex items-center gap-3 p-4 hover:bg-accent cursor-pointer border-b border-border/60"
       onClick={() => onOpenConversation(conversation.id)}
     >
       {conversation.unreadCount > 0 && (
-        <Badge className="bg-blue-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center p-0">
+        <Badge className="bg-primary text-primary-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center p-0">
           {conversation.unreadCount}
         </Badge>
       )}
@@ -36,14 +36,14 @@ export default function ChatContact({
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-sm">{otherUser.name}</h3>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-muted-foreground">
             {formatDate(conversation.lastMessage.timestamp)}
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">{otherUser.username}</p>
+          <p className="text-xs text-muted-foreground">{otherUser.username}</p>
         </div>
-        <p className="text-xs text-gray-300 truncate mt-1">
+        <p className="text-xs text-muted-foreground/90 truncate mt-1">
           {conversation.lastMessage.content}
         </p>
       </div>

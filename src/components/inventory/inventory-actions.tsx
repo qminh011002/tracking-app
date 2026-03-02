@@ -24,7 +24,7 @@ export function InventoryActions({
           size={"lg"}
           onClick={() => setBuyOpen(true)}
           disabled={!storeId}
-          className="pl-6 pr-11 bg-yellow-400 rounded-l-sm! hover:bg-yellow-500 text-black font-mono py-3 text-xl font-semibold rounded-none z-10"
+          className="pl-6 pr-11 bg-primary rounded-l-sm! hover:bg-primary/90 text-primary-foreground font-mono py-3 text-xl font-semibold rounded-none z-10"
           style={{
             clipPath: "polygon(0 0, 88% 0, 75% 100%, 0% 100%)",
           }}

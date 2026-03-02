@@ -10,6 +10,7 @@ interface DashboardStatProps {
   label: string;
   value: string;
   odometerValue?: number;
+  odometerFormat?: string;
   description?: string;
   unitLabel?: string;
   tag?: string;
@@ -22,6 +23,7 @@ export default function DashboardStat({
   label,
   value,
   odometerValue,
+  odometerFormat,
   description,
   unitLabel,
   icon,
@@ -59,6 +61,9 @@ export default function DashboardStat({
   };
 
   const { prefix, numericValue, suffix, isNumeric } = parseValue(value);
+  const hasExplicitPlus = value.trim().startsWith("+");
+  const normalizedPrefix = prefix.replace(/\+/g, "");
+  const showStandalonePlus = hasExplicitPlus && Number(odometerValue) > 0;
 
   return (
     <Card className="relative overflow-hidden">
@@ -75,7 +80,27 @@ export default function DashboardStat({
           <div>
             {Number.isFinite(odometerValue) ? (
               <div className="flex flex-col">
-                <DashboardOdometer value={Number(odometerValue)} />
+                <div className="flex items-center gap-1">
+                  {showStandalonePlus ? (
+                    <span className="font-display text-4xl md:text-5xl leading-none">
+                      +
+                    </span>
+                  ) : null}
+                  {normalizedPrefix ? (
+                    <span className="font-display text-4xl md:text-5xl leading-none">
+                      {normalizedPrefix}
+                    </span>
+                  ) : null}
+                  <DashboardOdometer
+                    value={Number(odometerValue)}
+                    format={odometerFormat}
+                  />
+                  {suffix ? (
+                    <span className="font-display text-3xl md:text-4xl leading-none">
+                      {suffix}
+                    </span>
+                  ) : null}
+                </div>
                 {unitLabel ? <span className="text-sm">{unitLabel}</span> : null}
               </div>
             ) : (
