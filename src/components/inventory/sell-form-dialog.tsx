@@ -315,9 +315,9 @@ export function SellFormDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>Buyer Phone</Label>
+            <Label>Buyer Phone (Optional)</Label>
             <Input
-              placeholder="10 digits, e.g. 0987654321"
+              placeholder="Optional - 10 digits, e.g. 0987654321"
               value={buyerPhone}
               onChange={(e) => setBuyerPhone(e.target.value)}
             />

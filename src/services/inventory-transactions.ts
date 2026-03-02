@@ -232,7 +232,7 @@ export async function createBuy(
           owner_id: user.id,
           store_id: storeId,
           name: normalizedSellerName,
-          phone: normalizedPhone || null,
+          phone: normalizedPhone || "",
           province_id: normalizedSellerProvinceId,
           address: normalizedSellerAddress || "",
         })
@@ -278,7 +278,7 @@ export async function createBuy(
       buy_price: normalizedBuyPrice,
       buy_date: normalizedBuyDate,
       snapshot_name: normalizedSellerName,
-      snapshot_phone: normalizedPhone || null,
+      snapshot_phone: normalizedPhone || "",
       snapshot_province_id: normalizedSellerProvinceId,
       snapshot_address: normalizedSellerAddress || "",
     });
@@ -372,7 +372,7 @@ export async function createSell(
           owner_id: user.id,
           store_id: storeId,
           name: buyer_name,
-          phone: normalizedPhone || null,
+          phone: normalizedPhone || "",
           province_id: normalizedBuyerProvinceId,
           address: normalizedBuyerAddress || "",
         })
@@ -422,7 +422,7 @@ export async function createSell(
       shipping_paid_by: shipping_paid_by || null,
       sell_date,
       snapshot_name: buyer_name,
-      snapshot_phone: normalizedPhone || null,
+      snapshot_phone: normalizedPhone || "",
       snapshot_province_id: normalizedBuyerProvinceId,
       snapshot_address: normalizedBuyerAddress || "",
     });

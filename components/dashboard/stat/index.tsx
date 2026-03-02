@@ -4,10 +4,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bullet } from "@/components/ui/bullet";
 import { cn } from "@/lib/utils";
+import DashboardOdometer from "@/components/dashboard/odometer";
 
 interface DashboardStatProps {
   label: string;
   value: string;
+  odometerValue?: number;
   description?: string;
   unitLabel?: string;
   tag?: string;
@@ -19,6 +21,7 @@ interface DashboardStatProps {
 export default function DashboardStat({
   label,
   value,
+  odometerValue,
   description,
   unitLabel,
   icon,
@@ -69,20 +72,29 @@ export default function DashboardStat({
 
       <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-6">
         <div className="flex items-center">
-          <span className="text-4xl font-display md:text-5xl">
-            {isNumeric ? (
+          <div>
+            {Number.isFinite(odometerValue) ? (
               <div className="flex flex-col">
-                <NumberFlow
-                  value={numericValue}
-                  prefix={prefix}
-                  suffix={suffix}
-                />
+                <DashboardOdometer value={Number(odometerValue)} />
                 {unitLabel ? <span className="text-sm">{unitLabel}</span> : null}
               </div>
             ) : (
-              value
+              <span className="text-4xl font-display md:text-5xl">
+                {isNumeric ? (
+                  <div className="flex flex-col">
+                    <NumberFlow
+                      value={numericValue}
+                      prefix={prefix}
+                      suffix={suffix}
+                    />
+                    {unitLabel ? <span className="text-sm">{unitLabel}</span> : null}
+                  </div>
+                ) : (
+                  value
+                )}
+              </span>
             )}
-          </span>
+          </div>
           {tag && (
             <Badge variant="default" className="ml-3 uppercase">
               {tag}

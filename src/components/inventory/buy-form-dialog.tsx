@@ -250,7 +250,7 @@ export function BuyFormDialog({
             <Input
               inputMode="numeric"
               maxLength={10}
-              placeholder="10 digits, e.g. 0987654321"
+              placeholder="Optional - 10 digits, e.g. 0987654321"
               {...register("sellerPhone")}
               onChange={(e) =>
                 setValue(

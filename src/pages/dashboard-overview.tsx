@@ -11,6 +11,7 @@ import { useStoreId } from "@/src/hooks/use-store-id";
 import { useDashboardKpiQuery } from "@/src/queries/hooks";
 import mockDataJson from "@/mock.json";
 import type { MockData } from "@/types/dashboard";
+import type { ComponentProps } from "react";
 
 const mockData = mockDataJson as MockData;
 
@@ -30,10 +31,11 @@ export default function DashboardOverview() {
   const { storeId } = useStoreId();
   const { data: kpi, isLoading } = useDashboardKpiQuery({ storeId });
 
-  const dashboardStats = [
+  const dashboardStats: Array<ComponentProps<typeof DashboardStat>> = [
     {
       label: "TOTAL SALES",
       value: isLoading ? "0" : String(Math.round(kpi?.totalSales ?? 0)),
+      odometerValue: isLoading ? 0 : Math.round(kpi?.totalSales ?? 0),
       unitLabel: "VND",
       description: "ALL SOLD ORDERS",
       icon: iconMap.gear,
@@ -43,6 +45,7 @@ export default function DashboardOverview() {
     {
       label: "TOTAL PROFIT",
       value: isLoading ? "0" : String(Math.round(kpi?.totalProfit ?? 0)),
+      odometerValue: isLoading ? 0 : Math.round(kpi?.totalProfit ?? 0),
       unitLabel: "VND",
       description: "REALIZED PROFIT",
       icon: iconMap.proccesor,
@@ -62,6 +65,7 @@ export default function DashboardOverview() {
     {
       label: "GROWTH RATE",
       value: isLoading ? "0%" : formatGrowthRate(kpi?.growthRate ?? 0),
+      odometerValue: undefined,
       unitLabel: undefined,
       description: "VS LAST MONTH",
       icon: iconMap.boom,
@@ -78,7 +82,7 @@ export default function DashboardOverview() {
             ? "down"
             : undefined,
     },
-  ] as const;
+  ];
 
   return (
     <DashboardPageLayout

@@ -14,7 +14,7 @@ export default function AnalyticPage() {
       <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
         Analytics page is ready. Add charts/widgets here.
       </div>
-      <DashboardOdometer />
+      <DashboardOdometer value={161050000} className="mt-4" />
     </DashboardPageLayout>
   );
 }
