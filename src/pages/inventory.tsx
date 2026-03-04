@@ -130,7 +130,7 @@ export default function InventoryPage() {
   const [queryInput, setQueryInput] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [filter, setFilter] = React.useState<InventoryFilter>("all");
-  const [sortBy, setSortBy] = React.useState<InventorySortBy>("in_stock_first");
+  const [sortBy, setSortBy] = React.useState<InventorySortBy>("created_desc");
   const [page, setPage] = React.useState(1);
   const [appliedFilters, setAppliedFilters] =
     React.useState<InventoryFilterDraft>(EMPTY_INVENTORY_FILTERS);
@@ -230,35 +230,37 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          <Tabs
-            value={filter}
-            onValueChange={(value) => setFilter(value as InventoryFilter)}
-          >
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="in_stock">In stock</TabsTrigger>
-              <TabsTrigger value="sold">Sold</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Select
-            value={sortBy}
-            onValueChange={(value) => setSortBy(value as InventorySortBy)}
-          >
-            <SelectTrigger className="w-42.5 bg-card border-none">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_desc">Created</SelectItem>
-              <SelectItem value="buy_date_desc">
-                <span className="inline-flex items-center gap-1">
-                  Buy date <ArrowDownAZ className="size-3.5" />
-                </span>
-              </SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="in_stock_first">In stock</SelectItem>
-              <SelectItem value="stock_age_desc">Longest stock</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Tabs
+              value={filter}
+              onValueChange={(value) => setFilter(value as InventoryFilter)}
+            >
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="in_stock">In stock</TabsTrigger>
+                <TabsTrigger value="sold">Sold</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Select
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as InventorySortBy)}
+            >
+              <SelectTrigger className="w-42.5 bg-card border-none">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_desc">Created</SelectItem>
+                <SelectItem value="buy_date_desc">
+                  <span className="inline-flex items-center gap-1">
+                    Buy date <ArrowDownAZ className="size-3.5" />
+                  </span>
+                </SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="in_stock_first">In stock</SelectItem>
+                <SelectItem value="stock_age_desc">Longest stock</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="text-xs md:text-sm text-muted-foreground uppercase tracking-[0.12em]">

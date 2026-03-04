@@ -68,7 +68,8 @@ export const queryKeys = {
     id: (userId: string) => ["store", "id", userId] as const,
   },
   dashboard: {
-    kpi: (params: { storeId: string }) => ["dashboard", "kpi", params] as const,
+    kpi: (params: { storeId: string; fromDate?: string; toDate?: string }) =>
+      ["dashboard", "kpi", params] as const,
   },
 };
 
@@ -313,7 +314,11 @@ export function useStoreIdQuery(params: {
   });
 }
 
-export function useDashboardKpiQuery(params: { storeId: string }) {
+export function useDashboardKpiQuery(params: {
+  storeId: string;
+  fromDate?: string;
+  toDate?: string;
+}) {
   return useQuery({
     queryKey: queryKeys.dashboard.kpi(params),
     queryFn: () => getDashboardKpi(params),
