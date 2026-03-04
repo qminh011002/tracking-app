@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,36 @@ export function ConfirmDialog({
   cancelText = "Cancel",
   loading = false,
 }: ConfirmDialogProps) {
+  const isDeleteAction = React.useMemo(() => {
+    const lowerConfirm = confirmText.trim().toLowerCase();
+    const lowerTitle = title.trim().toLowerCase();
+    return (
+      lowerConfirm.includes("delete") ||
+      lowerTitle.includes("delete") ||
+      lowerTitle.includes("xóa")
+    );
+  }, [confirmText, title]);
+
+  const [countdown, setCountdown] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!open || !isDeleteAction) {
+      setCountdown(0);
+      return;
+    }
+    setCountdown(3);
+  }, [open, isDeleteAction]);
+
+  React.useEffect(() => {
+    if (!open || countdown <= 0) return;
+    const timer = window.setTimeout(() => {
+      setCountdown((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [open, countdown]);
+
+  const confirmDisabled = loading || countdown > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md border-none">
@@ -47,9 +78,14 @@ export function ConfirmDialog({
             type="button"
             variant="destructive"
             onClick={() => void onConfirm()}
-            disabled={loading}
+            disabled={confirmDisabled}
+            className={countdown > 0 ? "opacity-55" : undefined}
           >
-            {loading ? "Processing..." : confirmText}
+            {loading
+              ? "Processing..."
+              : countdown > 0
+                ? `${confirmText} (${countdown}s)`
+                : confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

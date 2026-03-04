@@ -47,17 +47,38 @@ export default function Widget({ widgetData }: WidgetProps) {
             countryName?: string;
           };
 
+          const locality = (data.locality ?? "").trim();
+          const cityFromApi = (data.city ?? "").trim();
+          const cityFromAdmin = (
+            data.localityInfo?.administrative
+              ?.find((x) => (x.order ?? 0) >= 6)
+              ?.name ?? ""
+          ).trim();
           const city =
-            (data.city ?? "").trim() ||
-            (data.locality ?? "").trim() ||
+            locality ||
+            cityFromApi ||
             (
-              data.localityInfo?.administrative
-                ?.find((x) => (x.order ?? 0) >= 6)
-                ?.name ?? ""
+              cityFromAdmin
             ).trim();
           const province = (data.principalSubdivision ?? "").trim();
           const country = (data.countryName ?? "").trim();
-          const nextLocation = [city, province, country].filter(Boolean).join(", ");
+          const normalizeText = (value: string) =>
+            value
+              .toLowerCase()
+              .replace(/\b(city|province|state|tinh|thanh pho)\b/g, "")
+              .replace(/[.,-]/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+
+          const cityNorm = normalizeText(city);
+          const provinceNorm = normalizeText(province);
+          const isDuplicateCityProvince =
+            cityNorm && provinceNorm && cityNorm === provinceNorm;
+          const cityPart = isDuplicateCityProvince ? "" : city;
+
+          const nextLocation = [cityPart, province, country]
+            .filter(Boolean)
+            .join(", ");
 
           if (!ignore && nextLocation) {
             setLocationText(nextLocation);

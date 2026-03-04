@@ -30,6 +30,13 @@ import {
   updateModel,
   type ModelItem,
 } from "@/src/services/models";
+import {
+  createBrand,
+  deleteBrand,
+  getBrands,
+  updateBrand,
+  type BrandItem,
+} from "@/src/services/brands";
 import { getProvinces } from "@/src/services/provinces";
 import { getDashboardKpi } from "@/src/services/dashboard";
 
@@ -52,6 +59,10 @@ export const queryKeys = {
     all: ["models"] as const,
     list: (params: { storeId: string; searchTerm: string }) =>
       ["models", "list", params] as const,
+  },
+  brands: {
+    all: ["brands"] as const,
+    list: ["brands", "list"] as const,
   },
   provinces: {
     all: ["provinces"] as const,
@@ -115,6 +126,46 @@ export function useModelsQuery(params: { storeId: string; searchTerm: string }) 
     queryKey: queryKeys.models.list(params),
     queryFn: () => getModels(params),
     enabled: Boolean(params.storeId),
+  });
+}
+
+export function useBrandsQuery(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.brands.list,
+    queryFn: getBrands,
+    enabled,
+  });
+}
+
+export function useCreateBrandMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createBrand,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.brands.all });
+    },
+  });
+}
+
+export function useUpdateBrandMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateBrand,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.brands.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.models.all });
+    },
+  });
+}
+
+export function useDeleteBrandMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteBrand,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.brands.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.models.all });
+    },
   });
 }
 
@@ -340,4 +391,10 @@ export function sortModelsForPicker(models: ModelItem[]) {
     if (pa !== pb) return pa - pb;
     return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
   });
+}
+
+export function sortBrandsForPicker(brands: BrandItem[]) {
+  return [...brands].sort((a, b) =>
+    a.name.localeCompare(b.name, "vi", { sensitivity: "base" }),
+  );
 }

@@ -10,6 +10,9 @@ export type ModelItem = {
   image: string | null;
   created_at: string;
   store_id: string;
+  brand_id: string | null;
+  brand_name: string | null;
+  brand_logo: string | null;
 };
 
 function normalizeSearch(value: string) {
@@ -22,7 +25,7 @@ export async function getModels(params: { storeId: string; searchTerm: string })
 
   let query = supabase
     .from("models")
-    .select("id,name,image,created_at,store_id")
+    .select("id,name,image,created_at,store_id,brand_id,brand:brand_id(name,logo)")
     .eq("store_id", storeId)
     .order("created_at", { ascending: false });
 
@@ -32,7 +35,20 @@ export async function getModels(params: { storeId: string; searchTerm: string })
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as ModelItem[];
+  return (data ?? []).map(normalizeModelRow);
+}
+
+function normalizeModelRow(row: any): ModelItem {
+  return {
+    id: row.id,
+    name: row.name,
+    image: row.image ?? null,
+    created_at: row.created_at,
+    store_id: row.store_id,
+    brand_id: row.brand_id ?? null,
+    brand_name: row.brand?.name ?? null,
+    brand_logo: row.brand?.logo ?? null,
+  };
 }
 
 async function uploadModelImage(params: {
@@ -86,12 +102,14 @@ async function uploadModelImage(params: {
 export async function createModel(params: {
   storeId: string;
   name: string;
+  brandId: string;
   imageFile?: File | null;
 }) {
-  const { storeId, name, imageFile } = params;
+  const { storeId, name, brandId, imageFile } = params;
   const normalizedName = name.trim();
   if (!storeId) throw new Error("No store assigned");
   if (!normalizedName) throw new Error("Model name is required");
+  if (!brandId) throw new Error("Brand is required");
   const imageUrl = await uploadModelImage({
     storeId,
     modelName: normalizedName,
@@ -103,28 +121,32 @@ export async function createModel(params: {
     .insert({
       store_id: storeId,
       name: normalizedName,
+      brand_id: brandId,
       image: imageUrl,
     })
-    .select("id,name,image,created_at,store_id")
+    .select("id,name,image,created_at,store_id,brand_id,brand:brand_id(name,logo)")
     .single();
 
   if (error) throw error;
-  return data as ModelItem;
+  return normalizeModelRow(data);
 }
 
 export async function updateModel(params: {
   storeId: string;
   id: string;
   name: string;
+  brandId: string;
   imageFile?: File | null;
 }) {
-  const { storeId, id, name, imageFile } = params;
+  const { storeId, id, name, brandId, imageFile } = params;
   const normalizedName = name.trim();
   if (!storeId) throw new Error("No store assigned");
   if (!id) throw new Error("Model ID is required");
   if (!normalizedName) throw new Error("Model name is required");
-  const payload: { name: string; image?: string | null } = {
+  if (!brandId) throw new Error("Brand is required");
+  const payload: { name: string; brand_id: string; image?: string | null } = {
     name: normalizedName,
+    brand_id: brandId,
   };
 
   if (imageFile) {
@@ -140,11 +162,11 @@ export async function updateModel(params: {
     .update(payload)
     .eq("id", id)
     .eq("store_id", storeId)
-    .select("id,name,image,created_at,store_id")
+    .select("id,name,image,created_at,store_id,brand_id,brand:brand_id(name,logo)")
     .single();
 
   if (error) throw error;
-  return data as ModelItem;
+  return normalizeModelRow(data);
 }
 
 export async function deleteModel(params: { storeId: string; id: string }) {
