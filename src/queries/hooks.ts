@@ -39,6 +39,13 @@ import {
 } from "@/src/services/brands";
 import { getProvinces } from "@/src/services/provinces";
 import { getDashboardKpi } from "@/src/services/dashboard";
+import {
+  getAnalyticsSalesOverview,
+  getAnalyticsProducts,
+  getAnalyticsGeo,
+  getAnalyticsCustomers,
+  getAnalyticsInventoryMargin,
+} from "@/src/services/analytics";
 
 export const queryKeys = {
   inventory: {
@@ -81,6 +88,18 @@ export const queryKeys = {
   dashboard: {
     kpi: (params: { storeId: string; fromDate?: string; toDate?: string }) =>
       ["dashboard", "kpi", params] as const,
+  },
+  analytics: {
+    sales: (params: { storeId: string; fromDate?: string; toDate?: string; prevFromDate?: string; prevToDate?: string }) =>
+      ["analytics", "sales", params] as const,
+    products: (params: { storeId: string; fromDate?: string; toDate?: string }) =>
+      ["analytics", "products", params] as const,
+    geo: (params: { storeId: string; fromDate?: string; toDate?: string }) =>
+      ["analytics", "geo", params] as const,
+    customers: (params: { storeId: string; fromDate?: string; toDate?: string }) =>
+      ["analytics", "customers", params] as const,
+    inventoryMargin: (params: { storeId: string; fromDate?: string; toDate?: string }) =>
+      ["analytics", "inventory-margin", params] as const,
   },
 };
 
@@ -390,6 +409,71 @@ export function sortModelsForPicker(models: ModelItem[]) {
     const pb = getPriority(b.name);
     if (pa !== pb) return pa - pb;
     return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
+  });
+}
+
+// ─── Analytics Hooks ────────────────────────────────────────────
+
+export function useAnalyticsSalesQuery(params: {
+  storeId: string;
+  fromDate?: string;
+  toDate?: string;
+  prevFromDate?: string;
+  prevToDate?: string;
+}) {
+  return useQuery({
+    queryKey: queryKeys.analytics.sales(params),
+    queryFn: () => getAnalyticsSalesOverview(params),
+    enabled: Boolean(params.storeId),
+  });
+}
+
+export function useAnalyticsProductsQuery(params: {
+  storeId: string;
+  fromDate?: string;
+  toDate?: string;
+}) {
+  return useQuery({
+    queryKey: queryKeys.analytics.products(params),
+    queryFn: () => getAnalyticsProducts(params),
+    enabled: Boolean(params.storeId),
+  });
+}
+
+export function useAnalyticsGeoQuery(params: {
+  storeId: string;
+  fromDate?: string;
+  toDate?: string;
+  provinces: { id: number; name: string }[];
+}) {
+  return useQuery({
+    queryKey: queryKeys.analytics.geo({ storeId: params.storeId, fromDate: params.fromDate, toDate: params.toDate }),
+    queryFn: () => getAnalyticsGeo(params),
+    enabled: Boolean(params.storeId && params.provinces.length > 0),
+  });
+}
+
+export function useAnalyticsCustomersQuery(params: {
+  storeId: string;
+  fromDate?: string;
+  toDate?: string;
+}) {
+  return useQuery({
+    queryKey: queryKeys.analytics.customers(params),
+    queryFn: () => getAnalyticsCustomers(params),
+    enabled: Boolean(params.storeId),
+  });
+}
+
+export function useAnalyticsInventoryMarginQuery(params: {
+  storeId: string;
+  fromDate?: string;
+  toDate?: string;
+}) {
+  return useQuery({
+    queryKey: queryKeys.analytics.inventoryMargin(params),
+    queryFn: () => getAnalyticsInventoryMargin(params),
+    enabled: Boolean(params.storeId),
   });
 }
 
