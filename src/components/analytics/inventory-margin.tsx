@@ -110,25 +110,27 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
             return (
               <div key={item.model} className="bg-accent rounded-lg p-3">
                 <div className="text-xs text-muted-foreground uppercase truncate">{item.model}</div>
-                <div className="h-36 mt-1">
+                <div className="mt-1 flex h-40 items-center justify-center overflow-hidden">
                   <ChartContainer
-                    className="h-full w-full"
+                    className="flex h-full w-full items-center justify-center"
                     config={{ ratio: { label: "Ratio", color: gaugeColor(ratio) } }}
                   >
                     <RadialBarChart
+                      width={180}
+                      height={180}
                       data={gaugeData}
                       startAngle={90}
                       endAngle={-270}
-                      innerRadius="58%"
-                      outerRadius="96%"
+                      innerRadius="62%"
+                      outerRadius="88%"
                     >
                       <PolarAngleAxis type="number" domain={[0, 200]} tick={false} />
                       <RadialBar background dataKey="value" cornerRadius={6} />
                     </RadialBarChart>
                   </ChartContainer>
                 </div>
-                <div className="font-display text-lg">{ratio.toFixed(0)}%</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="font-display text-lg whitespace-nowrap">{ratio.toFixed(0)}%</div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">
                   Stock: {item.inStock} | Safety: {item.safetyStock}
                 </div>
               </div>

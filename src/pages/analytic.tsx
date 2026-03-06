@@ -249,31 +249,31 @@ export default function AnalyticPage() {
         </TabsList>
 
         <TabsContent value="sales" className="mt-6">
-          <SalesOverview data={salesData} />
+          {tab === "sales" ? <SalesOverview data={salesData} /> : null}
         </TabsContent>
 
         <TabsContent value="products" className="mt-6">
-          <ProductAnalytics data={productsData} salesData={salesData} />
+          {tab === "products" ? <ProductAnalytics data={productsData} salesData={salesData} /> : null}
         </TabsContent>
 
         <TabsContent value="geo" className="mt-6">
-          <GeoAnalytics data={geoData} />
+          {tab === "geo" ? <GeoAnalytics data={geoData} /> : null}
         </TabsContent>
 
         <TabsContent value="customers" className="mt-6">
-          <CustomerAnalytics data={customersData} />
+          {tab === "customers" ? <CustomerAnalytics data={customersData} /> : null}
         </TabsContent>
 
         <TabsContent value="inventory" className="mt-6">
-          <InventoryMargin data={inventoryData} />
+          {tab === "inventory" ? <InventoryMargin data={inventoryData} /> : null}
         </TabsContent>
 
         <TabsContent value="tax" className="mt-6">
-          <TaxDashboard salesData={ytdSalesData} />
+          {tab === "tax" ? <TaxDashboard salesData={ytdSalesData} /> : null}
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-6">
-          <TaxCalendar />
+          {tab === "calendar" ? <TaxCalendar /> : null}
         </TabsContent>
       </Tabs>
     </DashboardPageLayout>

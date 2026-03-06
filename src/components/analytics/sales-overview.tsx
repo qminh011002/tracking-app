@@ -179,13 +179,6 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
     );
   }, [activeChannels, safeData.transactions, granularity]);
 
-  const channelData = safeData.revenueByChannel
-    .filter((item) => item.channel !== "website")
-    .map((item) => ({
-      ...item,
-      channelLabel: CHANNEL_LABELS[item.channel] ?? item.channel,
-    }));
-
   const categoryMonthlyData = safeData.revenueByCategoryMonthly.map((item) => ({
     ...item,
     monthLabel: toMonthLabel(item.month),
@@ -200,10 +193,6 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
       color: CHART_COLORS[(index + 1) % CHART_COLORS.length],
     };
   });
-
-  const channelConfig = {
-    revenue: { label: "Revenue", color: "var(--chart-2)" },
-  } satisfies ChartConfig;
 
   const categoryConfig: ChartConfig = {};
   categoryKeys.forEach((key, index) => {
@@ -351,35 +340,7 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
         </div>
       </DashboardCard>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DashboardCard
-          title="REVENUE BY CHANNEL"
-          addon={<InfoHint text="Compares revenue across sales channels to quickly identify strongest and weakest channel performance." />}
-        >
-          <div className="bg-accent rounded-lg p-3 w-full">
-            <div className="w-full h-72">
-              <ChartContainer className="w-full h-full" config={channelConfig}>
-                <BarChart data={channelData} layout="vertical" margin={{ left: 10, right: 12, top: 12, bottom: 12 }}>
-                  <CartesianGrid
-                    horizontal={false}
-                    strokeDasharray="8 8"
-                    strokeWidth={2}
-                    stroke="var(--muted-foreground)"
-                    opacity={0.3}
-                  />
-                  <XAxis type="number" tickFormatter={formatVnd} tickLine={false} className="text-sm fill-muted-foreground" />
-                  <YAxis type="category" dataKey="channelLabel" width={110} tickLine={false} className="text-sm fill-muted-foreground" />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" formatter={(value) => formatVndFull(Number(value))} />}
-                  />
-                  <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            </div>
-          </div>
-        </DashboardCard>
-
+      <div className="grid grid-cols-1 gap-6">
         <DashboardCard
           title="MONTHLY REVENUE MIX BY CATEGORY"
           addon={<InfoHint text="Stacked bars show category contribution by month, making product-mix changes easy to spot." />}

@@ -40,7 +40,7 @@ export default function DashboardOdometer({
       value={displayValue}
       format={format}
       className={cn(
-        "font-display text-4xl md:text-5xl leading-none tabular-nums",
+        "font-display text-4xl md:text-5xl leading-none tabular-nums whitespace-nowrap shrink-0",
         className,
       )}
     />

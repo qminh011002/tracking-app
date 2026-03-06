@@ -77,7 +77,7 @@ function ThresholdIndicator({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
           <span className="font-display text-sm">{formatVnd(current)}</span>
           <span className="text-xs text-muted-foreground">/ {formatVnd(threshold)}</span>
           {over ? (
@@ -278,8 +278,10 @@ export default function TaxDashboard({
             <CardTitle className="flex items-center gap-2.5"><Bullet />ANNUAL REVENUE</CardTitle>
           </CardHeader>
           <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
-            <DashboardOdometer value={Math.round(revenue)} />
-            <span className="text-sm">VND</span>
+            <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
+              <DashboardOdometer value={Math.round(revenue)} className="text-3xl md:text-5xl" />
+              <span className="shrink-0 text-sm">VND</span>
+            </div>
           </CardContent>
         </Card>
 
@@ -288,8 +290,10 @@ export default function TaxDashboard({
             <CardTitle className="flex items-center gap-2.5"><Bullet />VAT PAYABLE</CardTitle>
           </CardHeader>
           <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
-            <DashboardOdometer value={Math.round(baseTax.vat.vatPayable)} />
-            <span className="text-sm">VND</span>
+            <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
+              <DashboardOdometer value={Math.round(baseTax.vat.vatPayable)} className="text-3xl md:text-5xl" />
+              <span className="shrink-0 text-sm">VND</span>
+            </div>
             {baseTax.vat.isExempt && <Badge variant="outline-success" className="mt-1">EXEMPT</Badge>}
           </CardContent>
         </Card>
@@ -302,8 +306,10 @@ export default function TaxDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
-            <DashboardOdometer value={Math.round(selectedPit)} />
-            <span className="text-sm">VND</span>
+            <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
+              <DashboardOdometer value={Math.round(selectedPit)} className="text-3xl md:text-5xl" />
+              <span className="shrink-0 text-sm">VND</span>
+            </div>
             {revenue <= DEFAULT_TAX_CONFIG.pitThreshold && (
               <Badge variant="outline-success" className="mt-1">EXEMPT</Badge>
             )}
@@ -315,8 +321,10 @@ export default function TaxDashboard({
             <CardTitle className="flex items-center gap-2.5"><Bullet />SOCIAL INSURANCE</CardTitle>
           </CardHeader>
           <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
-            <DashboardOdometer value={Math.round(baseTax.bhxh.annualAmount)} />
-            <span className="text-sm">VND</span>
+            <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
+              <DashboardOdometer value={Math.round(baseTax.bhxh.annualAmount)} className="text-3xl md:text-5xl" />
+              <span className="shrink-0 text-sm">VND</span>
+            </div>
             {!bhxhEnabled && <Badge variant="secondary" className="mt-1">OFF</Badge>}
           </CardContent>
         </Card>
@@ -326,8 +334,10 @@ export default function TaxDashboard({
             <CardTitle className="flex items-center gap-2.5 text-primary"><Bullet variant="default" />TOTAL OBLIGATION</CardTitle>
           </CardHeader>
           <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
-            <DashboardOdometer value={Math.round(totalObligation)} />
-            <span className="text-sm">VND</span>
+            <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
+              <DashboardOdometer value={Math.round(totalObligation)} className="text-3xl md:text-5xl" />
+              <span className="shrink-0 text-sm">VND</span>
+            </div>
             <p className="text-xs font-medium tracking-wide text-muted-foreground mt-1">
               {revenue > 0 ? ((totalObligation / revenue) * 100).toFixed(1) : 0}% of revenue
             </p>

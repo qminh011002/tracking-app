@@ -77,17 +77,17 @@ export default function DashboardStat({
 
       <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-6">
         <div className="flex items-center">
-          <div>
+          <div className="min-w-0">
             {Number.isFinite(odometerValue) ? (
               <div className="flex flex-col">
-                <div className="flex items-center gap-1">
+                <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
                   {showStandalonePlus ? (
-                    <span className="font-display text-4xl md:text-5xl leading-none">
+                    <span className="shrink-0 font-display text-4xl md:text-5xl leading-none">
                       +
                     </span>
                   ) : null}
                   {normalizedPrefix ? (
-                    <span className="font-display text-4xl md:text-5xl leading-none">
+                    <span className="shrink-0 font-display text-4xl md:text-5xl leading-none">
                       {normalizedPrefix}
                     </span>
                   ) : null}
@@ -96,15 +96,15 @@ export default function DashboardStat({
                     format={odometerFormat}
                   />
                   {suffix ? (
-                    <span className="font-display text-3xl md:text-4xl leading-none">
+                    <span className="shrink-0 font-display text-3xl md:text-4xl leading-none">
                       {suffix}
                     </span>
                   ) : null}
                 </div>
-                {unitLabel ? <span className="text-sm">{unitLabel}</span> : null}
+                {unitLabel ? <span className="text-sm whitespace-nowrap">{unitLabel}</span> : null}
               </div>
             ) : (
-              <span className="text-4xl font-display md:text-5xl">
+              <span className="text-4xl font-display md:text-5xl whitespace-nowrap">
                 {isNumeric ? (
                   <div className="flex flex-col">
                     <NumberFlow
@@ -112,7 +112,7 @@ export default function DashboardStat({
                       prefix={prefix}
                       suffix={suffix}
                     />
-                    {unitLabel ? <span className="text-sm">{unitLabel}</span> : null}
+                    {unitLabel ? <span className="text-sm whitespace-nowrap">{unitLabel}</span> : null}
                   </div>
                 ) : (
                   value

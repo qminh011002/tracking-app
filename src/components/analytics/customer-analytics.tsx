@@ -17,15 +17,11 @@ import {
 } from "@/components/ui/chart";
 import { Bullet } from "@/components/ui/bullet";
 import type { CustomerAnalyticsData } from "@/src/services/analytics";
-import { CHART_COLORS, CHANNEL_LABELS } from "./format";
+import { CHART_COLORS } from "./format";
 import InfoHint from "./info-hint";
 
 const histConfig = {
   count: { label: "Orders", color: "var(--chart-3)" },
-} satisfies ChartConfig;
-
-const channelConfig = {
-  count: { label: "Orders", color: "var(--chart-4)" },
 } satisfies ChartConfig;
 
 export default function CustomerAnalytics({
@@ -48,8 +44,6 @@ export default function CustomerAnalytics({
   }));
 
   const totalCustomers = data.newVsReturning.reduce((s, d) => s + d.count, 0);
-  const acquisitionData = data.acquisitionByChannel.filter((item) => item.channel !== "website");
-
   const cohortMonths = [...new Set(data.cohortData.map((c) => c.firstMonth))].sort();
   const allMonths = [...new Set(data.cohortData.map((c) => c.month))].sort();
 
@@ -134,47 +128,6 @@ export default function CustomerAnalytics({
                     }
                   />
                   <Bar dataKey="count" fill="var(--color-count)" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            </div>
-          </div>
-        </DashboardCard>
-
-        {/* Acquisition Channel */}
-        <DashboardCard
-          title="CUSTOMER ACQUISITION CHANNEL"
-          addon={<InfoHint text="Counts first-touch channels that brought customers into your business." />}
-        >
-          <div className="bg-accent rounded-lg p-3 w-full">
-            <div className="w-full h-64">
-              <ChartContainer className="w-full h-full" config={channelConfig}>
-                <BarChart
-                  data={acquisitionData.map((c) => ({
-                    ...c,
-                    channel: CHANNEL_LABELS[c.channel] ?? c.channel,
-                  }))}
-                  margin={{ left: -12, right: 12, top: 12, bottom: 12 }}
-                >
-                  <CartesianGrid
-                    horizontal={false}
-                    strokeDasharray="8 8"
-                    strokeWidth={2}
-                    stroke="var(--muted-foreground)"
-                    opacity={0.3}
-                  />
-                  <XAxis dataKey="channel" tickLine={false} className="text-sm fill-muted-foreground" />
-                  <YAxis tickLine={false} axisLine={false} className="text-sm fill-muted-foreground" />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent indicator="dot" formatter={(value) => `${Number(value)} orders`} />
-                    }
-                  />
-                  <Bar dataKey="count" fill="var(--color-count)" radius={4}>
-                    {acquisitionData.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Bar>
                 </BarChart>
               </ChartContainer>
             </div>

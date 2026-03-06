@@ -20,14 +20,8 @@ import {
 } from "@/components/ui/chart";
 import { Bullet } from "@/components/ui/bullet";
 import type { ProductAnalyticsData, SalesOverviewData } from "@/src/services/analytics";
-import { CHANNEL_LABELS, CHART_COLORS, formatVnd, formatVndFull } from "./format";
+import { CHART_COLORS, formatVnd, formatVndFull } from "./format";
 import InfoHint from "./info-hint";
-
-function heatColor(value: number, max: number) {
-  if (max <= 0) return "rgba(148, 163, 184, 0.12)";
-  const ratio = Math.min(1, value / max);
-  return `rgba(59, 130, 246, ${0.12 + ratio * 0.78})`;
-}
 
 export default function ProductAnalytics({
   data,
@@ -50,31 +44,6 @@ export default function ProductAnalytics({
     ...item,
     quantityScaled: item.quantity * 100000,
   }));
-
-  const channels = Array.from(
-    new Set(
-      data.productByChannel
-        .map((item) => item.channel)
-        .filter((channel) => channel !== "website"),
-    ),
-  );
-  const topModels = top10.map((item) => item.model);
-
-  const matrix = topModels.map((model) => {
-    const row: Record<string, number | string> = { model };
-    channels.forEach((channel) => {
-      const found = data.productByChannel.find(
-        (item) => item.model === model && item.channel === channel,
-      );
-      row[channel] = found?.revenue ?? 0;
-    });
-    return row;
-  });
-
-  const matrixMax = Math.max(
-    ...matrix.flatMap((row) => channels.map((channel) => Number(row[channel] ?? 0))),
-    0,
-  );
 
   const brandDonut = (salesData?.revenueByBrand ?? []).map((item, index) => ({
     name: item.brand,
@@ -203,47 +172,7 @@ export default function ProductAnalytics({
         </DashboardCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DashboardCard
-          title="PRODUCT x CHANNEL HEATMAP"
-          addon={<InfoHint text="Heat intensity represents revenue. Darker cells mean stronger product-channel fit." />}
-        >
-          <div className="bg-accent rounded-lg overflow-auto max-h-96 p-2">
-            <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-accent">
-                <tr>
-                  <th className="p-2 text-left uppercase text-muted-foreground">Product</th>
-                  {channels.map((channel) => (
-                    <th key={channel} className="p-2 text-right uppercase text-muted-foreground min-w-24">
-                      {CHANNEL_LABELS[channel] ?? channel}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {matrix.map((row) => (
-                  <tr key={String(row.model)} className="border-t border-border/30">
-                    <td className="p-2 font-medium">{row.model}</td>
-                    {channels.map((channel) => {
-                      const value = Number(row[channel] ?? 0);
-                      return (
-                        <td key={channel} className="p-2 text-right">
-                          <div
-                            className="rounded px-2 py-1 font-display"
-                            style={{ backgroundColor: heatColor(value, matrixMax) }}
-                          >
-                            {formatVnd(value)}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </DashboardCard>
-
+      <div className="grid grid-cols-1 gap-6">
         <DashboardCard
           title="REVENUE SHARE BY BRAND"
           addon={<InfoHint text="Shows brand-level revenue contribution so you can evaluate portfolio concentration." />}
