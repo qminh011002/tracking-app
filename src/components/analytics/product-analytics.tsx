@@ -40,11 +40,6 @@ export default function ProductAnalytics({
 
   const top10 = data.topProducts.slice(0, 10);
 
-  const barData = top10.map((item) => ({
-    ...item,
-    quantityScaled: item.quantity * 100000,
-  }));
-
   const brandDonut = (salesData?.revenueByBrand ?? []).map((item, index) => ({
     name: item.brand,
     value: item.revenue,
@@ -53,7 +48,7 @@ export default function ProductAnalytics({
 
   const topProductConfig = {
     revenue: { label: "Revenue", color: "var(--chart-1)" },
-    quantityScaled: { label: "Units", color: "var(--chart-3)" },
+    quantity: { label: "Units", color: "var(--chart-3)" },
   } satisfies ChartConfig;
 
   const scatterConfig = {
@@ -65,12 +60,12 @@ export default function ProductAnalytics({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardCard
           title="TOP 10 BEST-SELLING PRODUCTS (UNITS + REVENUE)"
-          addon={<InfoHint text="Ranks SKUs by sales performance. This chart overlays revenue and scaled unit volume for each top SKU." />}
+          addon={<InfoHint text="Ranks SKUs by sales performance. Revenue uses the bottom axis (VND); units sold use the top axis." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-96">
               <ChartContainer className="w-full h-full" config={topProductConfig}>
-                <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 12, top: 12, bottom: 12 }}>
+                <BarChart data={top10} layout="vertical" margin={{ left: 10, right: 12, top: 12, bottom: 12 }}>
                   <CartesianGrid
                     horizontal={false}
                     strokeDasharray="8 8"
@@ -79,9 +74,19 @@ export default function ProductAnalytics({
                     opacity={0.3}
                   />
                   <XAxis
+                    xAxisId="revenue"
                     type="number"
                     tickFormatter={formatVnd}
                     tickLine={false}
+                    className="text-sm fill-muted-foreground"
+                  />
+                  <XAxis
+                    xAxisId="units"
+                    type="number"
+                    orientation="top"
+                    allowDecimals={false}
+                    tickLine={false}
+                    axisLine={false}
                     className="text-sm fill-muted-foreground"
                   />
                   <YAxis
@@ -108,8 +113,8 @@ export default function ProductAnalytics({
                       );
                     }}
                   />
-                  <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-                  <Bar dataKey="quantityScaled" fill="var(--color-quantityScaled)" radius={4} />
+                  <Bar xAxisId="revenue" dataKey="revenue" fill="var(--color-revenue)" radius={4} />
+                  <Bar xAxisId="units" dataKey="quantity" fill="var(--color-quantity)" radius={4} barSize={8} />
                 </BarChart>
               </ChartContainer>
             </div>

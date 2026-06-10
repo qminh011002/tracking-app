@@ -28,9 +28,11 @@ import type { InventoryMarginData } from "@/src/services/analytics";
 import { CHART_COLORS, formatVnd, formatVndFull } from "./format";
 import InfoHint from "./info-hint";
 
+// Thresholds match the card hint: >=100% of safety stock is healthy,
+// 80-99% is a warning, below 80% needs replenishment.
 function gaugeColor(value: number) {
-  if (value >= 120) return "var(--chart-2)";
-  if (value >= 80) return "var(--chart-4)";
+  if (value >= 100) return "var(--chart-2)";
+  if (value >= 80) return "var(--chart-3)";
   return "var(--destructive)";
 }
 
@@ -55,7 +57,7 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
   ];
 
   const marginLineConfig = {
-    marginPct: { label: "Bien loi nhuan %", color: "var(--chart-2)" },
+    marginPct: { label: "Gross margin %", color: "var(--chart-2)" },
   } satisfies ChartConfig;
 
   return (

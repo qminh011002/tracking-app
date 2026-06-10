@@ -8,6 +8,12 @@ interface TVNoiseProps {
   opacity?: number;
   intensity?: number;
   speed?: number;
+  /** Size of each noise particle in CSS pixels. Higher = chunkier grain. */
+  grain?: number;
+  /** Draw horizontal CRT scanlines over the noise. */
+  scanlines?: boolean;
+  /** Sweep a bright "rolling" sync band down the screen like an old TV. */
+  roll?: boolean;
 }
 
 export default function TVNoise({
@@ -15,9 +21,13 @@ export default function TVNoise({
   opacity = 0.03,
   intensity = 0.1,
   speed = 60,
+  grain = 1,
+  scanlines = false,
+  roll = false,
 }: TVNoiseProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
+  const rollRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,6 +37,13 @@ export default function TVNoise({
     if (!ctx) return;
 
     const frameDelay = 1000 / speed;
+    const grainSize = Math.max(1, grain);
+
+    // Offscreen buffer holds the low-res noise; it gets scaled up onto the
+    // visible canvas with smoothing disabled so each cell becomes a block.
+    const buffer = document.createElement("canvas");
+    const bufferCtx = buffer.getContext("2d");
+    if (!bufferCtx) return;
 
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
@@ -42,7 +59,8 @@ export default function TVNoise({
       ) {
         canvas.width = width;
         canvas.height = height;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        buffer.width = Math.max(1, Math.floor(rect.width / grainSize));
+        buffer.height = Math.max(1, Math.floor(rect.height / grainSize));
       }
     };
 
@@ -64,7 +82,7 @@ export default function TVNoise({
         return;
       }
 
-      const imageData = ctx.createImageData(width, height);
+      const imageData = bufferCtx.createImageData(buffer.width, buffer.height);
       const data = imageData.data;
 
       // Generate random noise
@@ -82,7 +100,48 @@ export default function TVNoise({
         }
       }
 
-      ctx.putImageData(imageData, 0, 0);
+      bufferCtx.putImageData(imageData, 0, 0);
+
+      // Scale the low-res noise up into chunky blocks.
+      ctx.clearRect(0, 0, width, height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(buffer, 0, 0, buffer.width, buffer.height, 0, 0, width, height);
+
+      const dpr = window.devicePixelRatio;
+
+      // CRT scanlines: thin dark horizontal lines across the whole screen.
+      if (scanlines) {
+        const lineGap = Math.max(2, Math.round(3 * dpr));
+        ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+        for (let y = 0; y < height; y += lineGap) {
+          ctx.fillRect(0, y, width, Math.max(1, Math.floor(lineGap / 2)));
+        }
+      }
+
+      // Rolling sync band: a soft bright stripe that sweeps downward, plus a
+      // few random horizontal "xẹt" streaks for the glitchy old-TV feel.
+      if (roll) {
+        rollRef.current = (rollRef.current + 1.5 * dpr) % (height + 1);
+        const bandHeight = Math.max(8, height * 0.12);
+        const bandY = rollRef.current - bandHeight;
+        const gradient = ctx.createLinearGradient(0, bandY, 0, bandY + bandHeight);
+        gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+        gradient.addColorStop(0.5, "rgba(255, 255, 255, 0.18)");
+        gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, bandY, width, bandHeight);
+
+        // Occasional torn streak lines.
+        const streaks = 3;
+        for (let s = 0; s < streaks; s++) {
+          if (Math.random() < 0.4) {
+            const sy = Math.random() * height;
+            const sh = Math.max(1, Math.random() * 3 * dpr);
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.15 + Math.random() * 0.25})`;
+            ctx.fillRect(0, sy, width, sh);
+          }
+        }
+      }
 
       // Schedule next frame
       setTimeout(() => {
@@ -109,7 +168,7 @@ export default function TVNoise({
       }
       window.removeEventListener("resize", handleResize);
     };
-  }, [intensity, speed]);
+  }, [intensity, speed, grain, scanlines, roll]);
 
   return (
     <canvas

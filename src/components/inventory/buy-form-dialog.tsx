@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { type ModelItem } from "@/src/services/models";
@@ -303,7 +304,13 @@ export function BuyFormDialog({
           </div>
           <div className="space-y-2">
             <Label>Buy Date *</Label>
-            <Input type="date" {...register("buyDate")} />
+            <DatePicker
+              value={watch("buyDate")}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(value) =>
+                setValue("buyDate", value, { shouldValidate: true })
+              }
+            />
             {errors.buyDate && (
               <p className="text-xs text-destructive">
                 {errors.buyDate.message}

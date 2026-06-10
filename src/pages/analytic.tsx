@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import DashboardPageLayout from "@/components/dashboard/layout";
 import { ChartArea } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -193,25 +193,23 @@ export default function AnalyticPage() {
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                 From
               </div>
-              <Input
-                type="date"
+              <DatePicker
                 value={range.from}
                 max={range.to}
-                onChange={(e) => setParams({ preset: "custom", from: e.target.value })}
-                className="w-40 bg-card border-border/60"
+                onChange={(value) => setParams({ preset: "custom", from: value })}
+                className="w-40! bg-card border-border/60"
               />
             </div>
             <div className="space-y-1">
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                 To
               </div>
-              <Input
-                type="date"
+              <DatePicker
                 value={range.to}
                 min={range.from}
                 max={today}
-                onChange={(e) => setParams({ preset: "custom", to: e.target.value })}
-                className="w-40 bg-card border-border/60"
+                onChange={(value) => setParams({ preset: "custom", to: value })}
+                className="w-40! bg-card border-border/60"
               />
             </div>
           </>

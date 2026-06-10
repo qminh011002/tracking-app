@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { V0Provider } from "@/lib/v0-context";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { MobileHeader } from "@/components/dashboard/mobile-header";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import mockDataJson from "@/mock.json";
@@ -13,26 +13,24 @@ const isV0 = window.location.hostname.includes("vusercontent.net");
 
 export function RootLayout() {
   return (
-    <div className="min-h-screen">
     <V0Provider isV0={isV0}>
-        <SidebarProvider>
+      <SidebarProvider>
+        <DashboardSidebar />
+        <SidebarInset className="h-svh overflow-hidden">
           <MobileHeader mockData={mockData} />
-          <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 lg:px-4">
-            <div className="hidden lg:block lg:col-span-2 top-0 relative">
-              <DashboardSidebar />
-            </div>
-            <div className="col-span-1 lg:col-span-8">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 p-2 lg:p-4 lg:pl-0 xl:flex-row">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth [scrollbar-gutter:stable]">
               <Outlet />
             </div>
-            <div className="hidden lg:block lg:col-span-2">
-              <div className="space-y-gap py-sides min-h-screen max-h-screen sticky top-0 overflow-clip">
+            <div className="hidden h-full w-90 shrink-0 overflow-hidden xl:block">
+              <div className="space-y-gap h-full overflow-hidden py-2">
                 <Widget widgetData={mockData.widgetData} />
                 <Notifications initialNotifications={mockData.notifications} />
               </div>
             </div>
           </div>
-        </SidebarProvider>
-      </V0Provider>
-    </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </V0Provider>
   );
 }

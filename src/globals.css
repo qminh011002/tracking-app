@@ -3,154 +3,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Ultralight.otf") format("opentype");
-  font-style: normal;
-  font-weight: 100;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Thin.otf") format("opentype");
-  font-style: normal;
-  font-weight: 200;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Light.otf") format("opentype");
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Regular.otf") format("opentype");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Medium.otf") format("opentype");
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Semibold.otf") format("opentype");
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Bold.otf") format("opentype");
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Heavy.otf") format("opentype");
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-Black.otf") format("opentype");
-  font-style: normal;
-  font-weight: 900;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-UltralightItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 100;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-ThinItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 200;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-LightItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 300;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-RegularItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-MediumItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 500;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-SemiboldItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 600;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-BoldItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-HeavyItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 800;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("/fonts/SF-Pro-Display/SF-Pro-Display-BlackItalic.otf") format("opentype");
-  font-style: italic;
-  font-weight: 900;
-  font-display: swap;
-}
-
 @theme inline {
-  --font-sans: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --text-xs: 0.8125rem;
   --text-sm: 0.9375rem;
 
@@ -210,7 +66,7 @@
 }
 
 :root {
-  --font-roboto-mono: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-roboto-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -255,44 +111,44 @@
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #e8edf7;
-  --card: #162033;
-  --card-foreground: #e8edf7;
-  --popover: #182338;
-  --popover-foreground: #e8edf7;
-  --primary: #334a74;
-  --primary-foreground: #f8fafc;
-  --secondary: #1e293b;
-  --secondary-foreground: #e8edf7;
-  --muted: #1b263a;
-  --muted-foreground: #a5b2c6;
-  --accent: #223049;
-  --accent-foreground: #e8edf7;
-  --border: rgb(100 116 139 / 38%);
-  --pop: #223049;
-  --input: rgb(100 116 139 / 45%);
-  --ring: #475569;
+  --background: #0c0e13;
+  --foreground: #e7e9ee;
+  --card: #14171f;
+  --card-foreground: #e7e9ee;
+  --popover: #171a23;
+  --popover-foreground: #e7e9ee;
+  --primary: #818cf8;
+  --primary-foreground: #0c0e13;
+  --secondary: #1d212c;
+  --secondary-foreground: #e7e9ee;
+  --muted: #191d26;
+  --muted-foreground: #9aa3b2;
+  --accent: #1d212c;
+  --accent-foreground: #e7e9ee;
+  --border: rgb(148 163 184 / 16%);
+  --pop: #1d212c;
+  --input: rgb(148 163 184 / 22%);
+  --ring: #6366f1;
 
-  --success: #34d399;
+  --success: #4ade80;
   --warning: #fbbf24;
   --destructive: #f87171;
 
-  --chart-1: #60a5fa;
+  --chart-1: #818cf8;
   --chart-2: #34d399;
   --chart-3: #fbbf24;
-  --chart-4: #a78bfa;
+  --chart-4: #38bdf8;
   --chart-5: #fb7185;
 
-  --sidebar: #111b2e;
-  --sidebar-foreground: #e8edf7;
-  --sidebar-primary: #334a74;
-  --sidebar-primary-foreground: #f8fafc;
-  --sidebar-accent: #1f2c45;
-  --sidebar-accent-hover: #2a3a59;
-  --sidebar-accent-foreground: #e8edf7;
-  --sidebar-border: rgb(100 116 139 / 34%);
-  --sidebar-ring: #475569;
+  --sidebar: #0f1117;
+  --sidebar-foreground: #e7e9ee;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0c0e13;
+  --sidebar-accent: #1a1e28;
+  --sidebar-accent-hover: #232836;
+  --sidebar-accent-foreground: #e7e9ee;
+  --sidebar-border: rgb(148 163 184 / 14%);
+  --sidebar-ring: #6366f1;
 }
 
 @layer base {
@@ -302,9 +158,17 @@
     scrollbar-color: oklch(0.5 0.01 255) oklch(0.24 0.01 255);
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased;
     overflow-y: auto;
     overflow-x: hidden;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv03", "cv04", "cv11";
+  }
+
+  /* Money, IMEI/serial and other figures align in columns */
+  .font-mono,
+  [data-slot="money"] {
+    font-variant-numeric: tabular-nums;
   }
 
   *::-webkit-scrollbar {
@@ -334,13 +198,13 @@
 
 @media (min-width: 1028px) {
   html {
-    font-size: 0.7em;
+    font-size: 0.8em;
   }
 }
 
 @media (min-width: 1240px) and (max-width: 1920px) {
   html {
-    font-size: 0.75em;
+    font-size: 0.875em;
   }
 }
 

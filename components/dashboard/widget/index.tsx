@@ -133,15 +133,34 @@ export default function Widget({ widgetData }: WidgetProps) {
 
   return (
     <Card className="w-full aspect-[1.5] relative overflow-hidden">
-      <TVNoise opacity={0.3} intensity={0.2} speed={40} />
-      <CardContent className="bg-accent/30 flex-1 flex flex-col justify-between text-sm font-medium uppercase relative z-20">
-        <div className="flex justify-between items-center">
-          <span className="opacity-50">{dateInfo.dayOfWeek}</span>
+      <video
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full scale-110 object-cover"
+        src={assetPath(
+          "/videos/YTDown_YouTube_Tom-and-Jerry-Mega-Compilation-Vol-12-Wa_Media_pEl3-0GHyoQ_005_240p.mp4",
+        )}
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+      <TVNoise
+        className="z-10"
+        opacity={0.6}
+        intensity={0.5}
+        speed={40}
+        grain={1.5}
+        scanlines
+        roll
+
+      />
+      <CardContent className="bg-transparent p-3 py-2 flex-1 flex flex-col justify-between text-sm font-medium uppercase relative z-20 [text-shadow:_0_1px_6px_rgba(0,0,0,0.85)]">
+        <div className="flex justify-between items-center text-white">
+          <span>{dateInfo.dayOfWeek}</span>
           <span>{dateInfo.restOfDate}</span>
         </div>
         <div className="text-center">
           <div
-            className="text-5xl font-mono font-semibold"
+            className="text-4xl font-mono font-semibold"
             suppressHydrationWarning
           >
             {formatTime(currentTime)}

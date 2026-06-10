@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -289,6 +290,35 @@ export function SellFormDialog({
               </SelectContent>
             </Select>
           </div>
+          {sellType === "SHIP" && (
+            <>
+              <div className="space-y-2">
+                <Label>Shipping Fee</Label>
+                <MoneyInput
+                  placeholder="e.g. 50.000"
+                  valueDigits={shippingFee}
+                  onValueDigitsChange={setShippingFee}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Shipping Paid By</Label>
+                <Select
+                  value={shippingPaidBy}
+                  onValueChange={(v) =>
+                    setShippingPaidBy(v as "seller" | "buyer" | "")
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select payer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="seller">seller</SelectItem>
+                    <SelectItem value="buyer">buyer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
           <div className="space-y-2">
             <Label>Buyer Province *</Label>
             <ProvinceCombobox
@@ -338,41 +368,12 @@ export function SellFormDialog({
               onValueDigitsChange={setDepositAmount}
             />
           </div>
-          {sellType === "SHIP" && (
-            <>
-              <div className="space-y-2">
-                <Label>Shipping Fee</Label>
-                <MoneyInput
-                  placeholder="e.g. 50.000"
-                  valueDigits={shippingFee}
-                  onValueDigitsChange={setShippingFee}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Shipping Paid By</Label>
-                <Select
-                  value={shippingPaidBy}
-                  onValueChange={(v) =>
-                    setShippingPaidBy(v as "seller" | "buyer" | "")
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select payer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="seller">seller</SelectItem>
-                    <SelectItem value="buyer">buyer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
           <div className="space-y-2">
             <Label>Sell Date</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={sellDate}
-              onChange={(e) => setSellDate(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={setSellDate}
             />
           </div>
           <div className="space-y-2 md:col-span-2">

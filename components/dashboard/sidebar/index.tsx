@@ -110,14 +110,14 @@ export function DashboardSidebar({
     data.user.name;
 
   return (
-    <Sidebar {...props} className={cn("py-sides", className)}>
-      <SidebarHeader className="rounded-t-lg flex gap-3 flex-row rounded-b-none">
-        <div className="flex overflow-clip size-12 shrink-0 items-center justify-center rounded bg-sidebar-primary-foreground/10 transition-colors group-hover:bg-sidebar-primary text-sidebar-primary-foreground">
-          <MonkeyIcon className="size-10 group-hover:scale-[1.7] origin-top-left transition-transform" />
+    <Sidebar {...props} collapsible="icon" className={className}>
+      <SidebarHeader className="rounded-t-lg flex gap-3 flex-row rounded-b-none group-data-[collapsible=icon]:p-0!">
+        <div className="flex overflow-clip size-12 shrink-0 items-center justify-center rounded bg-sidebar-primary-foreground/10 transition-colors group-hover:bg-sidebar-primary text-sidebar-primary-foreground group-data-[collapsible=icon]:size-8">
+          <MonkeyIcon className="size-10 group-hover:scale-[1.7] origin-top-left transition-transform group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:group-hover:scale-100" />
         </div>
-        <div className="grid flex-1 text-left text-sm leading-tight">
-          <span className="text-2xl font-display">M.O.N.K.Y.</span>
-          <span className="text-xs uppercase">The OS for Rebels</span>
+        <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+          <span className="text-2xl font-display">Inventory</span>
+          <span className="text-xs uppercase">Store Management</span>
         </div>
       </SidebarHeader>
 
@@ -191,14 +191,14 @@ export function DashboardSidebar({
               <SidebarMenuItem>
                 <Popover>
                   <PopoverTrigger className="flex gap-0.5 w-full group cursor-pointer">
-                    <div className="shrink-0 flex size-14 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground overflow-clip">
+                    <div className="shrink-0 flex size-14 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground overflow-clip group-data-[collapsible=icon]:size-8">
                       <img
                         src={assetPath(data.user.avatar)}
                         alt={data.user.name}
                         className="size-full object-cover"
                       />
                     </div>
-                    <div className="group/item pl-3 pr-1.5 pt-2 pb-1.5 flex-1 flex bg-sidebar-accent hover:bg-sidebar-accent-active/75 items-center rounded group-data-[state=open]:bg-sidebar-accent-active group-data-[state=open]:hover:bg-sidebar-accent-active group-data-[state=open]:text-sidebar-accent-foreground">
+                    <div className="group/item pl-3 pr-1.5 pt-2 pb-1.5 flex-1 flex bg-sidebar-accent hover:bg-sidebar-accent-active/75 items-center rounded group-data-[state=open]:bg-sidebar-accent-active group-data-[state=open]:hover:bg-sidebar-accent-active group-data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden">
                       <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate text-xl font-display">
                           {userName}
@@ -235,7 +235,6 @@ export function DashboardSidebar({
         </SidebarGroup>
       </SidebarFooter>
 
-      <SidebarRail />
     </Sidebar>
   );
 }

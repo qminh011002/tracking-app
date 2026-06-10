@@ -1,8 +1,7 @@
-import { CalendarDays, MapPin, Tag } from "lucide-react";
+import { ArrowDownRight, CalendarDays, MapPin, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import MoneyPlus from "../icons/money-plus";
 
 export type InventoryStatus = "in_stock" | "sold";
 
@@ -38,8 +37,8 @@ export type InventoryItem = {
 };
 
 function formatMoney(value: number | null) {
-  if (value === null) return "-";
-  return value.toLocaleString("vi-VN");
+  if (value === null) return "—";
+  return `${value.toLocaleString("vi-VN")} ₫`;
 }
 
 function netProfit(item: InventoryItem) {
@@ -56,123 +55,152 @@ function getStockAgeDays(dateRaw?: string) {
   return Math.max(0, diff);
 }
 
+type TransactionRowProps = {
+  kind: "buy" | "sell";
+  amount: number | null;
+  name: string;
+  province: string;
+  date: string;
+};
+
+function TransactionRow({ kind, amount, name, province, date }: TransactionRowProps) {
+  const isBuy = kind === "buy";
+  return (
+    <div className="space-y-2 px-4 py-3.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span
+          className={cn(
+            "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider",
+            isBuy ? "text-warning" : "text-primary",
+          )}
+        >
+          <span
+            className={cn(
+              "size-1.5 rounded-full",
+              isBuy ? "bg-warning" : "bg-primary",
+            )}
+          />
+          {isBuy ? "Buy" : "Sell"}
+        </span>
+        <span
+          className={cn(
+            "whitespace-nowrap font-mono text-base font-bold tabular-nums",
+            amount === null
+              ? "text-muted-foreground"
+              : isBuy
+                ? "text-warning"
+                : "text-primary",
+          )}
+        >
+          {formatMoney(amount)}
+        </span>
+      </div>
+      <div className="truncate text-sm font-medium text-foreground">{name}</div>
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-1">
+          <MapPin className="size-3.5 shrink-0" />
+          <span className="truncate">{province || "—"}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1">
+          <CalendarDays className="size-3.5 shrink-0" />
+          {date}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function InventoryCard({ item }: { item: InventoryItem }) {
   const profit = netProfit(item);
   const stockAgeDays = getStockAgeDays(item.buyInfo.dateRaw);
-  const sellName =
-    item.status === "in_stock"
-      ? `In stock ${stockAgeDays} day${stockAgeDays === 1 ? "" : "s"}`
-      : item.sellInfo.name;
+  const isSold = item.status === "sold";
 
   return (
-    <Card className="h-full rounded-lg transition-all duration-150 hover:cursor-pointer hover:shadow-[0_0_18px_rgba(255,255,255,0.1)]">
-      <CardHeader className="h-auto gap-2 pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-3 min-w-0">
-            {item.modelImage ? (
-              <div className="size-15 shrink-0 overflow-hidden rounded-md bg-muted">
-                <img
-                  src={item.modelImage}
-                  alt={item.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="size-full object-contain object-center p-1 scale-110"
-                />
-              </div>
-            ) : null}
-            <CardTitle className="text-xl md:text-2xl font-mono truncate">
+    <Card className="group flex h-full flex-col gap-0 overflow-hidden rounded-xl border-border/60 py-0 transition-all duration-200 hover:cursor-pointer hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-black/40">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
+        <div className="flex min-w-0 items-center gap-3">
+          {item.modelImage ? (
+            <div className="size-14 shrink-0 overflow-hidden ">
+              <img
+                src={item.modelImage}
+                alt={item.title}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-contain object-center p-1"
+              />
+            </div>
+          ) : null}
+          <div className="min-w-0 space-y-1">
+            <h3 className="truncate text-base font-semibold leading-tight text-foreground">
               {item.title}
-            </CardTitle>
-          </div>
-          <Badge
-            variant={item.status === "sold" ? "secondary" : "outline-success"}
-            className="uppercase px-3 py-1 rounded-full"
-          >
-            {item.status === "sold" ? "Sold" : "In stock"}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2 text-[14px] text-white/80 uppercase tracking-[0.16em]">
-          <Tag className="size-3.5" />
-          <span>{item.label}</span>
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex h-full flex-col space-y-4 bg-background/50">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2 pr-3">
-            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-              Buy info
-            </div>
-            <div className="text-xl font-semibold text-warning">
-              {formatMoney(item.buyInfo.amount)}
-            </div>
-            <div className="font-semibold">{item.buyInfo.name}</div>
+            </h3>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="size-3.5" />
-              <span>{item.buyInfo.province || "-"}</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <CalendarDays className="size-3.5" />
-              <span>{item.buyInfo.date}</span>
+              <Tag className="size-3 shrink-0" />
+              <span className="truncate font-mono">{item.label}</span>
             </div>
           </div>
+        </div>
+        <Badge
+          variant={isSold ? "secondary" : "outline-success"}
+          className="shrink-0 gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide"
+        >
+          <span
+            className={cn(
+              "size-1.5 rounded-full",
+              isSold ? "bg-muted-foreground" : "bg-success",
+            )}
+          />
+          {isSold ? "Sold" : "In stock"}
+        </Badge>
+      </div>
 
-          {item.status === "in_stock" ? (
-            <div className="space-y-2 pl-1">
-              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                Status
-              </div>
-              <div className="flex items-center gap-2.5 rounded-lg  bg-muted px-3 py-2.5">
-                <div className="relative grid size-10 place-items-center rounded-md bg-primary/10 text-primary">
-                  <CalendarDays className="size-7 opacity-75" color="white" />
-                </div>
-                <div className="leading-tight">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    In Stock
-                  </div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {stockAgeDays} day{stockAgeDays === 1 ? "" : "s"}
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Transaction ledger */}
+      <div className="flex flex-1 flex-col px-5 pb-5">
+        <div className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30">
+          <TransactionRow
+            kind="buy"
+            amount={item.buyInfo.amount}
+            name={item.buyInfo.name}
+            province={item.buyInfo.province}
+            date={item.buyInfo.date}
+          />
+
+          {isSold ? (
+            <TransactionRow
+              kind="sell"
+              amount={item.sellInfo.amount}
+              name={item.sellInfo.name}
+              province={item.sellInfo.province}
+              date={item.sellInfo.date}
+            />
           ) : (
-            <div className="space-y-2 pl-1">
-              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                Sell info
-              </div>
-              <div
-                className={cn(
-                  "text-xl font-bold",
-                  item.sellInfo.amount === null
-                    ? "text-muted-foreground"
-                    : "text-primary",
-                )}
-              >
-                {formatMoney(item.sellInfo.amount)}
-              </div>
-              <div className="font-semibold">{sellName}</div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <MapPin className="size-3.5" />
-                <span>{item.sellInfo.province || "-"}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <CalendarDays className="size-3.5" />
-                <span>{item.sellInfo.date}</span>
-              </div>
+            <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="size-1.5 rounded-full bg-muted-foreground/50" />
+                Stock age
+              </span>
+              <span className="whitespace-nowrap font-mono text-base font-bold tabular-nums text-foreground">
+                {stockAgeDays}
+                <span className="ml-1 text-xs font-normal text-muted-foreground">
+                  day{stockAgeDays === 1 ? "" : "s"}
+                </span>
+              </span>
             </div>
           )}
         </div>
 
-        <div className="pt-3">
-          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-1">
+        {/* Net profit footer */}
+        <div className="mt-auto flex items-center justify-between gap-4 pt-4">
+          <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <ArrowDownRight className="size-3.5" />
             Net profit
-          </div>
-          <div
+          </span>
+          <span
             className={cn(
-              "text-2xl font-bold font-mono",
+              "whitespace-nowrap font-mono text-lg font-bold tabular-nums",
               profit === null
-                ? "text-muted-foreground"
+                ? "text-sm font-medium text-muted-foreground"
                 : profit >= 0
                   ? "text-success"
                   : "text-destructive",
@@ -181,9 +209,9 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             {profit === null
               ? "Pending"
               : `${profit > 0 ? "+" : ""}${formatMoney(profit)}`}
-          </div>
+          </span>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

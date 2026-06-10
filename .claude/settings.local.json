@@ -2,7 +2,27 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc --noEmit)",
-      "Bash(npx vite build)"
+      "Bash(npx vite build)",
+      "Bash(rtk ls *)",
+      "Bash(rtk read *)",
+      "Bash(rtk find *)",
+      "Bash(rtk tree *)",
+      "Bash(python3 *)",
+      "Bash(rtk tsc *)",
+      "Bash(rtk npm *)",
+      "Bash(rtk curl *)",
+      "Bash(rtk grep *)",
+      "Bash(rtk npx *)",
+      "Bash(rtk git *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('radix-ui:', p.dependencies['radix-ui']||'MISSING'\\); console.log\\('react-select:', p.dependencies['@radix-ui/react-select']||'absent'\\)\")",
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); const d={...p.dependencies,...p.devDependencies}; console.log\\(Object.keys\\(d\\).filter\\(k=>k.includes\\('base-ui'\\)\\).map\\(k=>k+': '+d[k]\\).join\\('\\\\n'\\)||'NO base-ui'\\)\")",
+      "Bash(git checkout *)",
+      "Bash(sed -n '1,40p' components/ui/button.tsx)",
+      "WebFetch(domain:base-ui.com)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);const d={...p.dependencies,...p.devDependencies};['react-day-picker','date-fns'].forEach\\(k=>console.log\\(k+': '+\\(d[k]||'MISSING'\\)\\)\\)\")",
+      "WebSearch",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

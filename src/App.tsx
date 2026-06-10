@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import * as React from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { RequireAuth } from "./components/auth/require-auth";
 import { RootLayout } from "./layouts/root-layout";
 import AnalyticPage from "./pages/analytic";
@@ -10,9 +11,36 @@ import InventoryDetailPage from "./pages/inventory-detail";
 import NotFoundPage from "./pages/not-found";
 import WarrantyCheckingPage from "./pages/warranty-checking";
 
+const APP_NAME = "Inventory";
+
+const PAGE_TITLES: Record<string, string> = {
+  "/auth": "Sign In",
+  "/": "Dashboard",
+  "/analytic": "Analytics",
+  "/analytics": "Analytics",
+  "/inventory": "Inventory",
+  "/warranty-checking": "Warranty Check",
+  "/device": "Devices",
+  "/404": "Page Not Found",
+};
+
+function DocumentTitle() {
+  const { pathname } = useLocation();
+
+  React.useEffect(() => {
+    let page = PAGE_TITLES[pathname];
+    if (!page && pathname.startsWith("/inventory/")) page = "Inventory Detail";
+    document.title = page ? `${page} · ${APP_NAME}` : APP_NAME;
+  }, [pathname]);
+
+  return null;
+}
+
 export default function App() {
   return (
-    <Routes>
+    <>
+      <DocumentTitle />
+      <Routes>
       <Route path="auth" element={<AuthPage />} />
       <Route
         element={
@@ -31,6 +59,7 @@ export default function App() {
         <Route path="404" element={<NotFoundPage />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }

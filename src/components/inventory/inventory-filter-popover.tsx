@@ -2,6 +2,7 @@ import * as React from "react";
 import { Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -193,11 +194,12 @@ function InventoryFilterPopoverInner({
                 <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
                   Date from
                 </label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={draftFilters.dateFrom}
-                  onChange={(event) =>
-                    setDraftFilters((prev) => ({ ...prev, dateFrom: event.target.value }))
+                  max={draftFilters.dateTo || undefined}
+                  placeholder="Date from"
+                  onChange={(value) =>
+                    setDraftFilters((prev) => ({ ...prev, dateFrom: value }))
                   }
                 />
               </div>
@@ -205,11 +207,12 @@ function InventoryFilterPopoverInner({
                 <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
                   Date to
                 </label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={draftFilters.dateTo}
-                  onChange={(event) =>
-                    setDraftFilters((prev) => ({ ...prev, dateTo: event.target.value }))
+                  min={draftFilters.dateFrom || undefined}
+                  placeholder="Date to"
+                  onChange={(value) =>
+                    setDraftFilters((prev) => ({ ...prev, dateTo: value }))
                   }
                 />
               </div>

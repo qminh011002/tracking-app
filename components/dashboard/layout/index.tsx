@@ -1,4 +1,5 @@
 import React from "react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface DashboardPageLayoutProps {
   children: React.ReactNode;
@@ -17,11 +18,15 @@ export default function DashboardPageLayout({
 }: DashboardPageLayoutProps) {
   return (
     <div className="flex flex-col relative w-full gap-1 min-h-full">
-      <div className="flex items-center lg:items-baseline gap-2.5 md:gap-4 px-4 md:px-6 py-3 md:pb-4 lg:pt-7 ring-2 ring-pop sticky top-header-mobile lg:top-0 bg-background z-10">
+      <div className="flex items-center lg:items-baseline gap-2.5 md:gap-4 px-4 md:px-6 lg:pl-2 py-3 md:pb-4 lg:pt-2 ring-2 ring-pop sticky top-header-mobile lg:top-0 bg-background z-10">
+        <SidebarTrigger
+          variant="ghost"
+          className="hidden lg:flex my-auto self-center size-8 text-muted-foreground hover:text-foreground"
+        />
         <div className="max-lg:contents rounded bg-primary size-7 md:size-9 flex items-center justify-center my-auto">
           <header.icon className="ml-1 lg:ml-0 opacity-50 md:opacity-100 size-5" />
         </div>
-        <h1 className="text-xl lg:text-4xl font-display leading-none mb-1">
+        <h1 className="text-xl lg:text-4xl font-display leading-tight py-0.5">
           {header.title}
         </h1>
         {(header.description || header.actions) && (

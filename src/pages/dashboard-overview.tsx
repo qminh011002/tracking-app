@@ -7,7 +7,7 @@ import BracketsIcon from "@/components/icons/brackets";
 import GearIcon from "@/components/icons/gear";
 import ProcessorIcon from "@/components/icons/proccesor";
 import BoomIcon from "@/components/icons/boom";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -296,25 +296,23 @@ export default function DashboardOverview() {
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                 From
               </div>
-              <Input
-                type="date"
+              <DatePicker
                 value={effectiveFromDate}
                 max={effectiveToDate}
-                onChange={(event) => handleCustomDateChange("from", event.target.value)}
-                className="w-44 bg-card border-border/60"
+                onChange={(value) => handleCustomDateChange("from", value)}
+                className="w-44! bg-card border-border/60"
               />
             </div>
             <div className="space-y-1">
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                 To
               </div>
-              <Input
-                type="date"
+              <DatePicker
                 value={effectiveToDate}
                 min={effectiveFromDate}
                 max={formatDateParam(new Date())}
-                onChange={(event) => handleCustomDateChange("to", event.target.value)}
-                className="w-44 bg-card border-border/60"
+                onChange={(value) => handleCustomDateChange("to", value)}
+                className="w-44! bg-card border-border/60"
               />
             </div>
           </>

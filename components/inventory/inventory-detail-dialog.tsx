@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -43,8 +44,30 @@ import {
 import { toast } from "@/hooks/use-toast";
 
 function formatMoney(value: number | null) {
-  if (value === null) return "-";
-  return value.toLocaleString("vi-VN");
+  if (value === null) return "—";
+  return `${value.toLocaleString("vi-VN")} ₫`;
+}
+
+function Field({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label
+        htmlFor={htmlFor}
+        className="text-xs font-medium text-muted-foreground"
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
 }
 
 function netProfit(item: InventoryItem) {
@@ -236,7 +259,7 @@ export function InventoryDetailDialog({
     });
   }, [item, provincesData]);
 
-  const previewImages = images.slice(0, 3);
+  const previewImages = images.slice(0, 5);
   const buyImagePreviews = React.useMemo(
     () => pendingBuyImages.map((file) => URL.createObjectURL(file)),
     [pendingBuyImages],
@@ -419,7 +442,7 @@ export function InventoryDetailDialog({
   const detailContent = (
     <>
       {/* Header */}
-      <div className="px-6 pt-6 pb-4 space-y-3">
+      <div className="border-b border-border/60 px-6 pt-6 pb-4 space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-3">
@@ -438,7 +461,7 @@ export function InventoryDetailDialog({
                 <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70">
                   Inventory detail
                 </p>
-                <h2 className="text-3xl font-bold text-foreground truncate">
+                <h2 className="text-2xl font-bold tracking-tight text-foreground truncate">
                   {item.title}
                 </h2>
               </div>
@@ -479,27 +502,25 @@ export function InventoryDetailDialog({
       <div className="px-6 pb-6 space-y-5">
         {/* Summary Cards - Simplified */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="rounded-lg p-4 bg-success/5 space-y-2 transition-all">
-            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-medium">
+          <div className="rounded-xl border border-success/20 bg-success/5 p-4 space-y-1.5">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
               Buy Price
             </div>
-            <div className="flex items-baseline gap-2">
-              <div className="text-3xl font-bold text-success">
-                {formatMoney(item.buyInfo.amount)}
-              </div>
+            <div className="whitespace-nowrap font-mono text-xl font-bold tabular-nums tracking-tight text-success">
+              {formatMoney(item.buyInfo.amount)}
             </div>
-            <div className="text-xs text-muted-foreground/70 pt-1">
+            <div className="truncate text-sm text-muted-foreground">
               from {item.buyInfo.name}
             </div>
           </div>
 
-          <div className="rounded-lg p-4 bg-primary/5 space-y-2 transition-all">
-            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-medium">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1.5">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
               Sell Price
             </div>
             <div
               className={cn(
-                "text-3xl font-bold",
+                "whitespace-nowrap font-mono text-xl font-bold tabular-nums tracking-tight",
                 item.sellInfo.amount === null
                   ? "text-muted-foreground"
                   : "text-primary",
@@ -507,27 +528,27 @@ export function InventoryDetailDialog({
             >
               {formatMoney(item.sellInfo.amount)}
             </div>
-            <div className="text-xs text-muted-foreground/70 pt-1">
+            <div className="truncate text-sm text-muted-foreground">
               to {item.sellInfo.name}
             </div>
           </div>
 
           <div
             className={cn(
-              "rounded-lg p-4 space-y-2 transition-all",
+              "rounded-xl border p-4 space-y-1.5",
               profit === null
-                ? "bg-muted/30"
+                ? "border-border/60 bg-muted/30"
                 : profit >= 0
-                  ? "bg-success/10"
-                  : "bg-destructive/10",
+                  ? "border-success/25 bg-success/10"
+                  : "border-destructive/25 bg-destructive/10",
             )}
           >
-            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-medium">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
               Net Profit
             </div>
             <div
               className={cn(
-                "text-3xl font-bold",
+                "whitespace-nowrap font-mono text-xl font-bold tabular-nums tracking-tight",
                 profit === null
                   ? "text-muted-foreground"
                   : profit >= 0
@@ -536,11 +557,11 @@ export function InventoryDetailDialog({
               )}
             >
               {profit === null
-                ? "-"
+                ? "—"
                 : `${profit > 0 ? "+" : ""}${formatMoney(profit)}`}
             </div>
-            <div className="text-xs text-muted-foreground/70 pt-1">
-              {profit === null ? "Pending" : profit > 0 ? "Profit" : "Loss"}
+            <div className="text-sm text-muted-foreground">
+              {profit === null ? "Pending" : profit >= 0 ? "Profit" : "Loss"}
             </div>
           </div>
         </div>
@@ -552,72 +573,97 @@ export function InventoryDetailDialog({
               Update Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                  Buy
+              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-success" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Buy information
+                  </span>
                 </div>
-                <Input
-                  type="number"
-                  min={0}
-                  placeholder="Amount"
-                  value={form.buy.amount}
-                  onChange={(event) =>
-                    setForm((prev) =>
-                      prev
-                        ? { ...prev, buy: { ...prev.buy, amount: event.target.value } }
-                        : prev,
-                    )
-                  }
-                />
-                <Input
-                  type="date"
-                  value={form.buy.date}
-                  onChange={(event) =>
-                    setForm((prev) =>
-                      prev ? { ...prev, buy: { ...prev.buy, date: event.target.value } } : prev,
-                    )
-                  }
-                />
-                <Input
-                  placeholder="Contact person"
-                  value={form.buy.name}
-                  onChange={(event) =>
-                    setForm((prev) =>
-                      prev ? { ...prev, buy: { ...prev.buy, name: event.target.value } } : prev,
-                    )
-                  }
-                />
-                <Input
-                  placeholder="Phone"
-                  value={form.buy.phone}
-                  onChange={(event) =>
-                    setForm((prev) =>
-                      prev ? { ...prev, buy: { ...prev.buy, phone: event.target.value } } : prev,
-                    )
-                  }
-                />
-                <Input
-                  placeholder="Address detail"
-                  value={form.buy.addressDetail}
-                  onChange={(event) =>
-                    setForm((prev) =>
-                      prev
-                        ? { ...prev, buy: { ...prev.buy, addressDetail: event.target.value } }
-                        : prev,
-                    )
-                  }
-                />
-                <ProvinceCombobox
-                  value={form.buy.provinceId}
-                  onChange={(value) =>
-                    setForm((prev) =>
-                      prev ? { ...prev, buy: { ...prev.buy, provinceId: value } } : prev,
-                    )
-                  }
-                  provinces={provincesData}
-                  loading={provincesLoading}
-                  placeholder="Buy province"
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Amount (VND)" htmlFor="buy-edit-amount">
+                    <Input
+                      id="buy-edit-amount"
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      value={form.buy.amount}
+                      onChange={(event) =>
+                        setForm((prev) =>
+                          prev
+                            ? { ...prev, buy: { ...prev.buy, amount: event.target.value } }
+                            : prev,
+                        )
+                      }
+                    />
+                  </Field>
+                  <Field label="Buy date" htmlFor="buy-edit-date">
+                    <DatePicker
+                      id="buy-edit-date"
+                      value={form.buy.date}
+                      max={new Date().toISOString().slice(0, 10)}
+                      onChange={(value) =>
+                        setForm((prev) =>
+                          prev ? { ...prev, buy: { ...prev.buy, date: value } } : prev,
+                        )
+                      }
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Contact person" htmlFor="buy-edit-name">
+                    <Input
+                      id="buy-edit-name"
+                      placeholder="Name"
+                      value={form.buy.name}
+                      onChange={(event) =>
+                        setForm((prev) =>
+                          prev ? { ...prev, buy: { ...prev.buy, name: event.target.value } } : prev,
+                        )
+                      }
+                    />
+                  </Field>
+                  <Field label="Phone" htmlFor="buy-edit-phone">
+                    <Input
+                      id="buy-edit-phone"
+                      inputMode="numeric"
+                      placeholder="0xxxxxxxxx"
+                      value={form.buy.phone}
+                      onChange={(event) =>
+                        setForm((prev) =>
+                          prev ? { ...prev, buy: { ...prev.buy, phone: event.target.value } } : prev,
+                        )
+                      }
+                    />
+                  </Field>
+                </div>
+                <Field label="Address detail" htmlFor="buy-edit-address">
+                  <Input
+                    id="buy-edit-address"
+                    placeholder="Street, ward, district..."
+                    value={form.buy.addressDetail}
+                    onChange={(event) =>
+                      setForm((prev) =>
+                        prev
+                          ? { ...prev, buy: { ...prev.buy, addressDetail: event.target.value } }
+                          : prev,
+                      )
+                    }
+                  />
+                </Field>
+                <Field label="Province">
+                  <ProvinceCombobox
+                    value={form.buy.provinceId}
+                    onChange={(value) =>
+                      setForm((prev) =>
+                        prev ? { ...prev, buy: { ...prev.buy, provinceId: value } } : prev,
+                      )
+                    }
+                    provinces={provincesData}
+                    loading={provincesLoading}
+                    placeholder="Buy province"
+                  />
+                </Field>
                 <div className="space-y-2 pt-1">
                   <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
                     Upload images
@@ -677,83 +723,108 @@ export function InventoryDetailDialog({
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-                <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                  Sell
+              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-primary" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Sell information
+                  </span>
                 </div>
                 {item.sellInfo.transactionId ? (
                   <>
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder="Amount"
-                      value={form.sell.amount}
-                      onChange={(event) =>
-                        setForm((prev) =>
-                          prev
-                            ? { ...prev, sell: { ...prev.sell, amount: event.target.value } }
-                            : prev,
-                        )
-                      }
-                    />
-                    <Input
-                      type="date"
-                      value={form.sell.date}
-                      onChange={(event) =>
-                        setForm((prev) =>
-                          prev
-                            ? { ...prev, sell: { ...prev.sell, date: event.target.value } }
-                            : prev,
-                        )
-                      }
-                    />
-                    <Input
-                      placeholder="Contact person"
-                      value={form.sell.name}
-                      onChange={(event) =>
-                        setForm((prev) =>
-                          prev
-                            ? { ...prev, sell: { ...prev.sell, name: event.target.value } }
-                            : prev,
-                        )
-                      }
-                    />
-                    <Input
-                      placeholder="Phone"
-                      value={form.sell.phone}
-                      onChange={(event) =>
-                        setForm((prev) =>
-                          prev
-                            ? { ...prev, sell: { ...prev.sell, phone: event.target.value } }
-                            : prev,
-                        )
-                      }
-                    />
-                    <Input
-                      placeholder="Address detail"
-                      value={form.sell.addressDetail}
-                      onChange={(event) =>
-                        setForm((prev) =>
-                          prev
-                            ? {
-                              ...prev,
-                              sell: { ...prev.sell, addressDetail: event.target.value },
-                            }
-                            : prev,
-                        )
-                      }
-                    />
-                    <ProvinceCombobox
-                      value={form.sell.provinceId}
-                      onChange={(value) =>
-                        setForm((prev) =>
-                          prev ? { ...prev, sell: { ...prev.sell, provinceId: value } } : prev,
-                        )
-                      }
-                      provinces={provincesData}
-                      loading={provincesLoading}
-                      placeholder="Sell province"
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Amount (VND)" htmlFor="sell-edit-amount">
+                        <Input
+                          id="sell-edit-amount"
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={form.sell.amount}
+                          onChange={(event) =>
+                            setForm((prev) =>
+                              prev
+                                ? { ...prev, sell: { ...prev.sell, amount: event.target.value } }
+                                : prev,
+                            )
+                          }
+                        />
+                      </Field>
+                      <Field label="Sell date" htmlFor="sell-edit-date">
+                        <DatePicker
+                          id="sell-edit-date"
+                          value={form.sell.date}
+                          max={new Date().toISOString().slice(0, 10)}
+                          onChange={(value) =>
+                            setForm((prev) =>
+                              prev
+                                ? { ...prev, sell: { ...prev.sell, date: value } }
+                                : prev,
+                            )
+                          }
+                        />
+                      </Field>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Contact person" htmlFor="sell-edit-name">
+                        <Input
+                          id="sell-edit-name"
+                          placeholder="Name"
+                          value={form.sell.name}
+                          onChange={(event) =>
+                            setForm((prev) =>
+                              prev
+                                ? { ...prev, sell: { ...prev.sell, name: event.target.value } }
+                                : prev,
+                            )
+                          }
+                        />
+                      </Field>
+                      <Field label="Phone" htmlFor="sell-edit-phone">
+                        <Input
+                          id="sell-edit-phone"
+                          inputMode="numeric"
+                          placeholder="0xxxxxxxxx"
+                          value={form.sell.phone}
+                          onChange={(event) =>
+                            setForm((prev) =>
+                              prev
+                                ? { ...prev, sell: { ...prev.sell, phone: event.target.value } }
+                                : prev,
+                            )
+                          }
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Address detail" htmlFor="sell-edit-address">
+                      <Input
+                        id="sell-edit-address"
+                        placeholder="Street, ward, district..."
+                        value={form.sell.addressDetail}
+                        onChange={(event) =>
+                          setForm((prev) =>
+                            prev
+                              ? {
+                                ...prev,
+                                sell: { ...prev.sell, addressDetail: event.target.value },
+                              }
+                              : prev,
+                          )
+                        }
+                      />
+                    </Field>
+                    <Field label="Province">
+                      <ProvinceCombobox
+                        value={form.sell.provinceId}
+                        onChange={(value) =>
+                          setForm((prev) =>
+                            prev ? { ...prev, sell: { ...prev.sell, provinceId: value } } : prev,
+                          )
+                        }
+                        provinces={provincesData}
+                        loading={provincesLoading}
+                        placeholder="Sell province"
+                      />
+                    </Field>
                   </>
                 ) : (
                   <div className="rounded-md border border-border/60 bg-card px-3 py-4 text-xs text-muted-foreground">
@@ -823,121 +894,90 @@ export function InventoryDetailDialog({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            <div className="relative space-y-3">
-              <div className="absolute left-1 top-2.5 bottom-0 w-px bg-success/35" />
-              <div className="flex items-center gap-2">
-                <div className="relative z-10 size-2.5 rounded-full bg-success" />
-                <h3 className="text-sm font-semibold text-foreground">
-                  Buy Information
-                </h3>
+            <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-success" />
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                    Buy Information
+                  </h3>
+                </div>
+                <span className="whitespace-nowrap font-mono text-base font-bold tabular-nums text-success">
+                  {formatMoney(item.buyInfo.amount)}
+                </span>
               </div>
 
-              <div className="space-y-3 pl-5 py-2">
-                <div>
-                  <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
-                    Amount
-                  </div>
-                  <div className="text-lg font-bold text-success">
-                    {formatMoney(item.buyInfo.amount)}
-                  </div>
+              <div className="space-y-2.5">
+                <div className="text-sm font-semibold text-foreground">
+                  {item.buyInfo.name}
                 </div>
-
-                <div>
-                  <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
-                    Contact Person
-                  </div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {item.buyInfo.name}
-                  </div>
-                </div>
-
                 <div className="flex items-start gap-2">
-                  <Phone className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                  <div className="text-xs text-muted-foreground/80">
+                  <Phone className="size-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-sm text-muted-foreground">
                     {item.buyInfo.phone}
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
-                  <MapPin className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                  <div className="text-xs text-muted-foreground/80 break-words">
+                  <MapPin className="size-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-sm text-muted-foreground break-words">
                     {formatAddress(item.buyInfo.addressDetail, item.buyInfo.province)}
                   </div>
                 </div>
-
                 <div className="flex items-start gap-2">
-                  <CalendarDays className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                  <div className="text-xs text-muted-foreground/80">
+                  <CalendarDays className="size-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-sm text-muted-foreground">
                     {item.buyInfo.date}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative space-y-3">
-              <div
-                className={cn(
-                  "absolute left-1 top-2.5 bottom-0 w-px",
-                  item.sellInfo.amount === null
-                    ? "bg-muted-foreground/20"
-                    : "bg-primary/30",
-                )}
-              />
-              <div className="flex items-center gap-2">
-                <div
+            <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "size-2 rounded-full",
+                      item.sellInfo.amount === null
+                        ? "bg-muted-foreground/40"
+                        : "bg-primary",
+                    )}
+                  />
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                    Sell Information
+                  </h3>
+                </div>
+                <span
                   className={cn(
-                    "relative z-10 size-2.5 rounded-full",
+                    "whitespace-nowrap font-mono text-base font-bold tabular-nums",
                     item.sellInfo.amount === null
-                      ? "bg-muted-foreground/40"
-                      : "bg-primary",
+                      ? "text-muted-foreground"
+                      : "text-primary",
                   )}
-                />
-                <h3 className="text-sm font-semibold text-foreground">
-                  Sell Information
-                </h3>
+                >
+                  {formatMoney(item.sellInfo.amount)}
+                </span>
               </div>
 
-              <div className="space-y-3 pl-5 py-2">
-                <div>
-                  <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
-                    Amount
-                  </div>
-                  <div
-                    className={cn(
-                      "text-lg font-bold",
-                      item.sellInfo.amount === null
-                        ? "text-muted-foreground"
-                        : "text-primary",
-                    )}
-                  >
-                    {formatMoney(item.sellInfo.amount)}
-                  </div>
+              <div className="space-y-2.5">
+                <div className="text-sm font-semibold text-foreground">
+                  {item.sellInfo.name}
                 </div>
-
-                <div>
-                  <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70 mb-1">
-                    Contact Person
-                  </div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {item.sellInfo.name}
-                  </div>
-                </div>
-
                 <div className="flex items-start gap-2">
-                  <Phone className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                  <div className="text-xs text-muted-foreground/80">
+                  <Phone className="size-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-sm text-muted-foreground">
                     {item.sellInfo.phone}
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
-                  <MapPin className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                  <div className="text-xs text-muted-foreground/80 break-words">
+                  <MapPin className="size-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-sm text-muted-foreground break-words">
                     {formatAddress(item.sellInfo.addressDetail, item.sellInfo.province)}
                   </div>
                 </div>
-
                 <div className="flex items-start gap-2">
-                  <CalendarDays className="size-3.5 text-muted-foreground/60 mt-0.5 shrink-0" />
-                  <div className="text-xs text-muted-foreground/80">
+                  <CalendarDays className="size-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-sm text-muted-foreground">
                     {item.sellInfo.date}
                   </div>
                 </div>
@@ -961,41 +1001,44 @@ export function InventoryDetailDialog({
           </div>
 
           {images.length > 0 ? (
-            <button
-              type="button"
-              className="group block w-fit mt-7 hover:cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
-              onClick={() => openLightboxAt(0)}
-            >
-              <div className="relative size-30">
-                {previewImages.slice(1).map((src, index) => (
-                  <img
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+              {previewImages.map((src, index) => {
+                const isLastPreview =
+                  index === previewImages.length - 1 &&
+                  images.length > previewImages.length;
+                return (
+                  <button
                     key={src}
-                    src={src}
-                    alt={`Inventory preview ${index + 3}`}
-                    className={cn(
-                      "absolute top-0 left-1/2 -translate-x-1/2 size-full rounded-xl object-cover border border-border/50 shadow-md transition-transform duration-300 ease-out",
-                      index === 0
-                        ? "-translate-y-2 -rotate-8 group-hover:-translate-y-3 group-hover:-translate-x-[54%] group-hover:-rotate-11 group-hover:scale-[1.03]"
-                        : "-translate-y-4 rotate-6 group-hover:-translate-y-6 group-hover:-translate-x-[46%] group-hover:rotate-9 group-hover:scale-[1.05]",
+                    type="button"
+                    className="group relative aspect-square overflow-hidden rounded-xl border border-border/60 bg-muted/20 hover:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    onClick={() => openLightboxAt(index)}
+                  >
+                    <img
+                      src={src}
+                      alt={`Inventory preview ${index + 1}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                    />
+                    {isLastPreview && (
+                      <div className="absolute inset-0 grid place-items-center bg-black/55 text-base font-semibold text-white">
+                        +{images.length - previewImages.length}
+                      </div>
                     )}
-                  />
-                ))}
-
-                <img
-                  src={previewImages[0]}
-                  alt="Inventory preview cover"
-                  className="absolute inset-0 mx-auto size-full rounded-xl object-cover border border-border/60 shadow-xl transition-transform duration-300 ease-out group-hover:translate-y-0.5 group-hover:scale-[1.02]"
-                />
-              </div>
-            </button>
+                  </button>
+                );
+              })}
+            </div>
           ) : (
             <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
               No images
             </div>
           )}
-          <div className="pt-2 text-xs text-muted-foreground/80">
-            Click to view full screen
-          </div>
+          {images.length > 0 && (
+            <div className="text-xs text-muted-foreground/80">
+              Click a photo to view full screen
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-4">
