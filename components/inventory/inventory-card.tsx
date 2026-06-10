@@ -84,7 +84,7 @@ function TransactionRow({ kind, amount, name, province, date }: TransactionRowPr
         </span>
         <span
           className={cn(
-            "whitespace-nowrap font-mono text-base font-bold tabular-nums",
+            "whitespace-nowrap text-base font-bold tabular-nums",
             amount === null
               ? "text-muted-foreground"
               : isBuy
@@ -137,7 +137,7 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             </h3>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Tag className="size-3 shrink-0" />
-              <span className="truncate font-mono">{item.label}</span>
+              <span className="truncate tabular-nums">{item.label}</span>
             </div>
           </div>
         </div>
@@ -180,7 +180,7 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
                 <span className="size-1.5 rounded-full bg-muted-foreground/50" />
                 Stock age
               </span>
-              <span className="whitespace-nowrap font-mono text-base font-bold tabular-nums text-foreground">
+              <span className="whitespace-nowrap text-base font-bold tabular-nums text-foreground">
                 {stockAgeDays}
                 <span className="ml-1 text-xs font-normal text-muted-foreground">
                   day{stockAgeDays === 1 ? "" : "s"}
@@ -198,7 +198,7 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
           </span>
           <span
             className={cn(
-              "whitespace-nowrap font-mono text-lg font-bold tabular-nums",
+              "whitespace-nowrap text-lg font-bold tabular-nums",
               profit === null
                 ? "text-sm font-medium text-muted-foreground"
                 : profit >= 0

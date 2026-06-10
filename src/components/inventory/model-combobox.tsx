@@ -6,6 +6,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import { cn } from "@/lib/utils";
 import type { ModelItem } from "@/src/services/models";
 
 type ModelComboboxProps = {
@@ -13,6 +14,9 @@ type ModelComboboxProps = {
   onChange: (value: string) => void;
   models: ModelItem[];
   loading?: boolean;
+  className?: string;
+  contentClassName?: string;
+  listClassName?: string;
 };
 
 export function ModelCombobox({
@@ -20,6 +24,9 @@ export function ModelCombobox({
   onChange,
   models,
   loading = false,
+  className,
+  contentClassName,
+  listClassName,
 }: ModelComboboxProps) {
   const selectedModel = models.find((model) => model.id === value) ?? null;
 
@@ -34,11 +41,11 @@ export function ModelCombobox({
       <ComboboxInput
         placeholder={loading ? "Loading models..." : "Select model"}
         disabled={loading}
-        className="w-full"
+        className={cn("w-full", className)}
       />
-      <ComboboxContent>
+      <ComboboxContent className={contentClassName}>
         <ComboboxEmpty>No model found.</ComboboxEmpty>
-        <ComboboxList>
+        <ComboboxList className={listClassName}>
           {(item: ModelItem) => (
             <ComboboxItem key={item.id} value={item}>
               <div className="flex min-w-0 items-center gap-2">

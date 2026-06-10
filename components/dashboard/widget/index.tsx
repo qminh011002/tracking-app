@@ -160,7 +160,7 @@ export default function Widget({ widgetData }: WidgetProps) {
         </div>
         <div className="text-center">
           <div
-            className="text-4xl font-mono font-semibold"
+            className="text-4xl font-semibold tabular-nums"
             suppressHydrationWarning
           >
             {formatTime(currentTime)}

@@ -290,7 +290,7 @@ function ChartTooltipContent({
                   </span>
                 </div>
                 {formattedValue !== undefined && formattedValue !== null && (
-                  <span className="text-foreground font-mono font-medium tabular-nums">
+                  <span className="text-foreground font-medium tabular-nums">
                     {formattedValue as React.ReactNode}
                   </span>
                 )}

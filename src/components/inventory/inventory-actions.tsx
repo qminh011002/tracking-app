@@ -24,7 +24,7 @@ export function InventoryActions({
           size={"lg"}
           onClick={() => setBuyOpen(true)}
           disabled={!storeId}
-          className="pl-7 pr-12 bg-warning hover:bg-warning/90 text-black font-mono py-3 text-xl font-black rounded-none rounded-l-md! z-10"
+          className="pl-7 pr-12 bg-warning hover:bg-warning/90 text-black py-3 text-xl font-black rounded-none rounded-l-md! z-10"
           style={{
             clipPath: "polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%)",
           }}
@@ -37,7 +37,7 @@ export function InventoryActions({
           size={"lg"}
           onClick={() => setSellOpen(true)}
           disabled={!storeId}
-          className="-ml-[24px] pl-12 pr-7 bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-xl font-black font-mono rounded-none rounded-r-md! z-20"
+          className="-ml-[24px] pl-12 pr-7 bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-xl font-black rounded-none rounded-r-md! z-20"
           style={{
             clipPath: "polygon(22px 0, 100% 0, 100% 100%, 0 100%)",
           }}

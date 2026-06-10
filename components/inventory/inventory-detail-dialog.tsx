@@ -506,7 +506,7 @@ export function InventoryDetailDialog({
             <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
               Buy Price
             </div>
-            <div className="whitespace-nowrap font-mono text-xl font-bold tabular-nums tracking-tight text-success">
+            <div className="whitespace-nowrap text-xl font-bold tabular-nums tracking-tight text-success">
               {formatMoney(item.buyInfo.amount)}
             </div>
             <div className="truncate text-sm text-muted-foreground">
@@ -520,7 +520,7 @@ export function InventoryDetailDialog({
             </div>
             <div
               className={cn(
-                "whitespace-nowrap font-mono text-xl font-bold tabular-nums tracking-tight",
+                "whitespace-nowrap text-xl font-bold tabular-nums tracking-tight",
                 item.sellInfo.amount === null
                   ? "text-muted-foreground"
                   : "text-primary",
@@ -548,7 +548,7 @@ export function InventoryDetailDialog({
             </div>
             <div
               className={cn(
-                "whitespace-nowrap font-mono text-xl font-bold tabular-nums tracking-tight",
+                "whitespace-nowrap text-xl font-bold tabular-nums tracking-tight",
                 profit === null
                   ? "text-muted-foreground"
                   : profit >= 0
@@ -902,7 +902,7 @@ export function InventoryDetailDialog({
                     Buy Information
                   </h3>
                 </div>
-                <span className="whitespace-nowrap font-mono text-base font-bold tabular-nums text-success">
+                <span className="whitespace-nowrap text-base font-bold tabular-nums text-success">
                   {formatMoney(item.buyInfo.amount)}
                 </span>
               </div>
@@ -949,7 +949,7 @@ export function InventoryDetailDialog({
                 </div>
                 <span
                   className={cn(
-                    "whitespace-nowrap font-mono text-base font-bold tabular-nums",
+                    "whitespace-nowrap text-base font-bold tabular-nums",
                     item.sellInfo.amount === null
                       ? "text-muted-foreground"
                       : "text-primary",
