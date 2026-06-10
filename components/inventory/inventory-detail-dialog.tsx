@@ -35,8 +35,10 @@ import { ConfirmDialog } from "@/src/components/common/confirm-dialog";
 import { ProvinceCombobox } from "@/src/components/inventory/province-combobox";
 import {
   useDeleteInventoryMutation,
+  useDeleteInventoryImageMutation,
   useProvincesQuery,
   useUploadInventoryImagesMutation,
+  useUpdateDeviceWarrantyMutation,
   useUpdateInventoryStatusMutation,
   useUpdateBuyTransactionMutation,
   useUpdateSellTransactionMutation,
@@ -112,6 +114,7 @@ type EditableTransactionForm = {
     phone: string;
     addressDetail: string;
     provinceId: string;
+    warrantyExpiryDate: string;
   };
   sell: {
     amount: string;
@@ -132,6 +135,7 @@ function createEditForm(item: InventoryItem): EditableTransactionForm {
       phone: item.buyInfo.phone === "-" ? "" : item.buyInfo.phone,
       addressDetail: item.buyInfo.addressDetail ?? "",
       provinceId: item.buyInfo.provinceId ? String(item.buyInfo.provinceId) : "",
+      warrantyExpiryDate: toDateInputValue(item.warrantyExpiryDate ?? ""),
     },
     sell: {
       amount: item.sellInfo.amount === null ? "" : String(item.sellInfo.amount),
@@ -170,6 +174,9 @@ export function InventoryDetailDialog({
   const [editError, setEditError] = React.useState<string | null>(null);
   const [pendingBuyImages, setPendingBuyImages] = React.useState<File[]>([]);
   const [pendingSellImages, setPendingSellImages] = React.useState<File[]>([]);
+  const [deletingImageId, setDeletingImageId] = React.useState<string | null>(
+    null,
+  );
   const [form, setForm] = React.useState<EditableTransactionForm | null>(
     item ? createEditForm(item) : null,
   );
@@ -177,6 +184,8 @@ export function InventoryDetailDialog({
   const updateBuyMutation = useUpdateBuyTransactionMutation();
   const updateSellMutation = useUpdateSellTransactionMutation();
   const uploadImagesMutation = useUploadInventoryImagesMutation();
+  const deleteImageMutation = useDeleteInventoryImageMutation();
+  const updateWarrantyMutation = useUpdateDeviceWarrantyMutation();
   const updateStatusMutation = useUpdateInventoryStatusMutation();
   const { data: provincesData = [], isLoading: provincesLoading } =
     useProvincesQuery(Boolean(open && storeId));
@@ -184,7 +193,9 @@ export function InventoryDetailDialog({
   const saving =
     updateBuyMutation.isPending ||
     updateSellMutation.isPending ||
-    uploadImagesMutation.isPending;
+    uploadImagesMutation.isPending ||
+    deleteImageMutation.isPending ||
+    updateWarrantyMutation.isPending;
   const updatingStatus = updateStatusMutation.isPending;
   const profit = item ? netProfit(item) : null;
   const [statusValue, setStatusValue] = React.useState(item?.status ?? "in_stock");
@@ -233,6 +244,7 @@ export function InventoryDetailDialog({
     setEditError(null);
     setPendingBuyImages([]);
     setPendingSellImages([]);
+    setDeletingImageId(null);
     setForm(item ? createEditForm(item) : null);
     setStatusValue(item?.status ?? "in_stock");
   }, [item, item?.id]);
@@ -259,7 +271,7 @@ export function InventoryDetailDialog({
     });
   }, [item, provincesData]);
 
-  const previewImages = images.slice(0, 5);
+  const previewImages = isEditing ? images : images.slice(0, 5);
   const buyImagePreviews = React.useMemo(
     () => pendingBuyImages.map((file) => URL.createObjectURL(file)),
     [pendingBuyImages],
@@ -369,6 +381,12 @@ export function InventoryDetailDialog({
         snapshot_province_id: form.buy.provinceId ? Number(form.buy.provinceId) : null,
       });
 
+      await updateWarrantyMutation.mutateAsync({
+        storeId,
+        deviceId: item.id,
+        warranty_expiry_date: form.buy.warrantyExpiryDate || null,
+      });
+
       if (item.sellInfo.transactionId) {
         await updateSellMutation.mutateAsync({
           storeId,
@@ -410,6 +428,38 @@ export function InventoryDetailDialog({
         title: "Update failed",
         description: message,
       });
+    }
+  };
+
+  const handleDeleteImage = async (image: { id?: string; url: string }) => {
+    if (!storeId) {
+      setEditError("Missing store ID");
+      return;
+    }
+    setDeletingImageId(image.id ?? image.url);
+    setEditError(null);
+    try {
+      await deleteImageMutation.mutateAsync({
+        storeId,
+        deviceId: item.id,
+        imageId: image.id,
+        imageUrl: image.url,
+      });
+      toast({
+        title: "Image deleted",
+        description: "Saved image has been removed.",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete image";
+      setEditError(message);
+      toast({
+        variant: "destructive",
+        title: "Delete image failed",
+        description: message,
+      });
+    } finally {
+      setDeletingImageId(null);
     }
   };
 
@@ -637,6 +687,52 @@ export function InventoryDetailDialog({
                     />
                   </Field>
                 </div>
+                <Field label="Warranty expiry (optional)" htmlFor="buy-edit-warranty">
+                  <div className="flex gap-2">
+                    <DatePicker
+                      id="buy-edit-warranty"
+                      value={form.buy.warrantyExpiryDate}
+                      min={new Date().toISOString().slice(0, 10)}
+                      max="2030-12-31"
+                      placeholder="Select warranty expiry date"
+                      onChange={(value) =>
+                        setForm((prev) =>
+                          prev
+                            ? {
+                              ...prev,
+                              buy: {
+                                ...prev.buy,
+                                warrantyExpiryDate: value,
+                              },
+                            }
+                            : prev,
+                        )
+                      }
+                    />
+                    {form.buy.warrantyExpiryDate && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setForm((prev) =>
+                            prev
+                              ? {
+                                ...prev,
+                                buy: {
+                                  ...prev.buy,
+                                  warrantyExpiryDate: "",
+                                },
+                              }
+                              : prev,
+                          )
+                        }
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </Field>
                 <Field label="Address detail" htmlFor="buy-edit-address">
                   <Input
                     id="buy-edit-address"
@@ -929,6 +1025,15 @@ export function InventoryDetailDialog({
                     {item.buyInfo.date}
                   </div>
                 </div>
+                <div className="flex items-start gap-2">
+                  <CalendarDays className="size-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+                  <div className="text-sm text-muted-foreground">
+                    Warranty:{" "}
+                    {item.warrantyExpiryDate
+                      ? toDateInputValue(item.warrantyExpiryDate)
+                      : "No warranty date"}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1002,30 +1107,49 @@ export function InventoryDetailDialog({
 
           {images.length > 0 ? (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-              {previewImages.map((src, index) => {
+              {previewImages.map((image, index) => {
                 const isLastPreview =
                   index === previewImages.length - 1 &&
                   images.length > previewImages.length;
+                const imageKey = image.id ?? image.url;
+                const isDeletingThisImage = deletingImageId === imageKey;
                 return (
-                  <button
-                    key={src}
-                    type="button"
-                    className="group relative aspect-square overflow-hidden rounded-xl border border-border/60 bg-muted/20 hover:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    onClick={() => openLightboxAt(index)}
+                  <div
+                    key={imageKey}
+                    className="group relative aspect-square overflow-hidden rounded-xl border border-border/60 bg-muted/20"
                   >
-                    <img
-                      src={src}
-                      alt={`Inventory preview ${index + 1}`}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
-                    />
-                    {isLastPreview && (
-                      <div className="absolute inset-0 grid place-items-center bg-black/55 text-base font-semibold text-white">
-                        +{images.length - previewImages.length}
-                      </div>
+                    <button
+                      type="button"
+                      className="size-full hover:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      onClick={() => openLightboxAt(index)}
+                    >
+                      <img
+                        src={image.url}
+                        alt={`Inventory preview ${index + 1}`}
+                        loading="lazy"
+                        decoding="async"
+                        className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                      />
+                      {isLastPreview && (
+                        <div className="absolute inset-0 grid place-items-center bg-black/55 text-base font-semibold text-white">
+                          +{images.length - previewImages.length}
+                        </div>
+                      )}
+                    </button>
+                    {isEditing && (
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="destructive"
+                        className="absolute right-1.5 top-1.5 size-7 rounded-full opacity-95"
+                        disabled={saving || isDeletingThisImage}
+                        onClick={() => handleDeleteImage(image)}
+                      >
+                        <Trash2 className="size-3.5" />
+                        <span className="sr-only">Delete saved image</span>
+                      </Button>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -1157,7 +1281,7 @@ export function InventoryDetailDialog({
 
             {images.length > 0 && (
               <img
-                src={images[activeImageIndex]}
+                src={images[activeImageIndex]?.url}
                 alt={`Inventory image ${activeImageIndex + 1}`}
                 className="max-h-[85vh] max-w-[92vw] object-contain select-none"
               />

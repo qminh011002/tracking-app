@@ -5,13 +5,19 @@ import { cn } from "@/lib/utils";
 
 export type InventoryStatus = "in_stock" | "sold";
 
+export type InventoryImage = {
+  id?: string;
+  url: string;
+};
+
 export type InventoryItem = {
   id: string;
   title: string;
   label: string;
   status: InventoryStatus;
   modelImage?: string | null;
-  images?: string[];
+  images?: InventoryImage[];
+  warrantyExpiryDate?: string | null;
   buyInfo: {
     transactionId?: string;
     amount: number;

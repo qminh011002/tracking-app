@@ -350,6 +350,7 @@ export function BuyFormDialog({
             <DatePicker
               value={watch("warrantyExpiryDate")}
               min={new Date().toISOString().slice(0, 10)}
+              max="2030-12-31"
               placeholder="Select warranty expiry date"
               onChange={(value) =>
                 setValue("warrantyExpiryDate", value, {

@@ -61,7 +61,8 @@ function toCardItem(item: SupabaseInventoryItem): InventoryCardItem {
     label: item.serial_or_imei,
     status: item.status,
     modelImage: item.model_image,
-    images: item.images.map((x) => x.image_url),
+    images: item.images.map((x) => ({ id: x.id, url: x.image_url })),
+    warrantyExpiryDate: item.warranty_expiry_date ?? null,
     buyInfo: {
       transactionId: item.buy?.id,
       amount: item.buy?.buy_price ?? 0,

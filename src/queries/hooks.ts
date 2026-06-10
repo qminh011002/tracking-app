@@ -11,11 +11,15 @@ import {
   deleteInventoryById,
   getInventoryById,
   getInventoryList,
+  deleteInventoryImage,
   uploadInventoryImages,
+  updateDeviceWarranty,
   updateInventoryStatus,
   updateBuyTransaction,
   updateSellTransaction,
+  type DeleteInventoryImageInput,
   type UploadInventoryImagesInput,
+  type UpdateDeviceWarrantyInput,
   type UpdateInventoryStatusInput,
   type UpdateBuyTransactionInput,
   type UpdateSellTransactionInput,
@@ -287,6 +291,26 @@ export function useUploadInventoryImagesMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: UploadInventoryImagesInput) => uploadInventoryImages(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
+    },
+  });
+}
+
+export function useDeleteInventoryImageMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: DeleteInventoryImageInput) => deleteInventoryImage(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
+    },
+  });
+}
+
+export function useUpdateDeviceWarrantyMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateDeviceWarrantyInput) => updateDeviceWarranty(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
     },

@@ -18,7 +18,7 @@ export type InventoryItem = {
   status: InventoryDeviceStatus;
   warranty_expiry_date?: string | null;
   created_at: string;
-  images: { image_url: string }[];
+  images: { id?: string; image_url: string }[];
   buy: {
     id?: string;
     buy_price?: number;
@@ -71,10 +71,23 @@ export type UpdateInventoryStatusInput = {
   status: InventoryDeviceStatus;
 };
 
+export type UpdateDeviceWarrantyInput = {
+  storeId: string;
+  deviceId: string;
+  warranty_expiry_date?: string | null;
+};
+
 export type UploadInventoryImagesInput = {
   storeId: string;
   deviceId: string;
   images: File[];
+};
+
+export type DeleteInventoryImageInput = {
+  storeId: string;
+  deviceId: string;
+  imageId?: string;
+  imageUrl: string;
 };
 
 export type PaginationMeta = {
@@ -430,10 +443,55 @@ export async function uploadInventoryImages(input: UploadInventoryImagesInput) {
   return { ok: true };
 }
 
+function getDeviceImageStoragePath(imageUrl: string) {
+  const marker = "/storage/v1/object/public/device-images/";
+  const markerIndex = imageUrl.indexOf(marker);
+  if (markerIndex === -1) return null;
+  return decodeURIComponent(imageUrl.slice(markerIndex + marker.length));
+}
+
+export async function deleteInventoryImage(input: DeleteInventoryImageInput) {
+  if (!input.imageId && !input.imageUrl) throw new Error("Missing image");
+
+  const storagePath = getDeviceImageStoragePath(input.imageUrl);
+  if (storagePath) {
+    const { error: storageError } = await supabase.storage
+      .from("device-images")
+      .remove([storagePath]);
+    if (storageError) throw storageError;
+  }
+
+  let query = supabase
+    .from("device_images")
+    .delete()
+    .eq("store_id", input.storeId)
+    .eq("device_id", input.deviceId);
+
+  query = input.imageId
+    ? query.eq("id", input.imageId)
+    : query.eq("image_url", input.imageUrl);
+
+  const { error } = await query;
+  if (error) throw error;
+  return { ok: true };
+}
+
 export async function updateInventoryStatus(input: UpdateInventoryStatusInput) {
   const { error } = await supabase
     .from("devices")
     .update({ status: input.status })
+    .eq("store_id", input.storeId)
+    .eq("id", input.deviceId);
+
+  if (error) throw error;
+  return { ok: true };
+}
+
+export async function updateDeviceWarranty(input: UpdateDeviceWarrantyInput) {
+  const normalizedDate = (input.warranty_expiry_date ?? "").trim() || null;
+  const { error } = await supabase
+    .from("devices")
+    .update({ warranty_expiry_date: normalizedDate })
     .eq("store_id", input.storeId)
     .eq("id", input.deviceId);
 
@@ -458,7 +516,7 @@ export async function getInventoryList(params: GetInventoryListParams) {
       `
       *,
       models (name,image),
-      device_images (image_url),
+      device_images (id,image_url),
       buy_transactions (
         *,
         provinces(name),
@@ -495,7 +553,7 @@ export async function getInventoryById(params: { storeId: string; id: string }) 
       `
       *,
       models (name,image),
-      device_images (image_url),
+      device_images (id,image_url),
       buy_transactions (
         *,
         provinces(name),
