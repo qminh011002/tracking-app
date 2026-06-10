@@ -16,6 +16,7 @@ export type InventoryItem = {
   model_image: string | null;
   serial_or_imei: string;
   status: InventoryDeviceStatus;
+  warranty_expiry_date?: string | null;
   created_at: string;
   images: { image_url: string }[];
   buy: {
@@ -300,6 +301,7 @@ function normalizeDevice(device: any): InventoryItem {
     model_image: device.models?.image ?? null,
     serial_or_imei: device.serial_or_imei,
     status: device.status,
+    warranty_expiry_date: device.warranty_expiry_date ?? null,
     created_at: device.created_at,
     images: device.device_images ?? [],
     buy: buy

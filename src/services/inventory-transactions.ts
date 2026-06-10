@@ -10,6 +10,7 @@ export type CreateBuyInput = {
   seller_province_id?: number;
   buy_price?: number;
   buy_date?: string;
+  warranty_expiry_date?: string;
   images?: File[];
 };
 
@@ -181,6 +182,7 @@ export async function createBuy(
       seller_province_id,
       buy_price,
       buy_date,
+      warranty_expiry_date,
       images,
     } = input;
 
@@ -208,6 +210,7 @@ export async function createBuy(
     const normalizedBuyPrice = Number.isFinite(buy_price) ? Number(buy_price) : 0;
     const normalizedBuyDate =
       buy_date && buy_date.trim() ? buy_date : new Date().toISOString().slice(0, 10);
+    const normalizedWarrantyExpiryDate = (warranty_expiry_date ?? "").trim();
 
     const normalizedPhone = normalizePhone(seller_phone);
 
@@ -263,6 +266,9 @@ export async function createBuy(
           model_id,
           serial_or_imei: normalizedSerial,
           status: "in_stock",
+          ...(normalizedWarrantyExpiryDate
+            ? { warranty_expiry_date: normalizedWarrantyExpiryDate }
+            : {}),
         })
         .select("id")
         .single();
@@ -286,7 +292,12 @@ export async function createBuy(
 
     const { error: statusError } = await supabase
       .from("devices")
-      .update({ status: "in_stock" })
+      .update({
+        status: "in_stock",
+        ...(normalizedWarrantyExpiryDate
+          ? { warranty_expiry_date: normalizedWarrantyExpiryDate }
+          : {}),
+      })
       .eq("id", deviceId)
       .eq("store_id", storeId);
     if (statusError) return { ok: false, error: statusError.message };

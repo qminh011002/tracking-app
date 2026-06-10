@@ -71,6 +71,15 @@ const buyFormSchema = z.object({
     .refine((value) => isNotFutureDate(value), {
       message: "Buy date cannot be in the future",
     }),
+  warrantyExpiryDate: z
+    .string()
+    .optional()
+    .refine((value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value), {
+      message: "Warranty expiry must be in YYYY-MM-DD format",
+    })
+    .refine((value) => !value || isValidDateValue(value), {
+      message: "Warranty expiry date is invalid",
+    }),
   buyPriceDigits: z.string().refine((value) => /^\d*$/.test(value), {
     message: "Buy price is invalid",
   }),
@@ -86,6 +95,7 @@ const defaultValues: BuyFormValues = {
   sellerProvinceId: "",
   sellerAddress: "",
   buyDate: "",
+  warrantyExpiryDate: "",
   buyPriceDigits: "",
 };
 
@@ -181,6 +191,7 @@ export function BuyFormDialog({
       seller_address: values.sellerAddress || undefined,
       buy_price: Number(values.buyPriceDigits || 0),
       buy_date: values.buyDate,
+      warranty_expiry_date: values.warrantyExpiryDate || undefined,
       images: buyImages,
     });
 
@@ -314,6 +325,41 @@ export function BuyFormDialog({
             {errors.buyDate && (
               <p className="text-xs text-destructive">
                 {errors.buyDate.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <div className="flex items-center justify-between gap-3">
+              <Label>Warranty Expiry (Optional)</Label>
+              {watch("warrantyExpiryDate") && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={() =>
+                    setValue("warrantyExpiryDate", "", {
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+            <DatePicker
+              value={watch("warrantyExpiryDate")}
+              min={new Date().toISOString().slice(0, 10)}
+              placeholder="Select warranty expiry date"
+              onChange={(value) =>
+                setValue("warrantyExpiryDate", value, {
+                  shouldValidate: true,
+                })
+              }
+            />
+            {errors.warrantyExpiryDate && (
+              <p className="text-xs text-destructive">
+                {errors.warrantyExpiryDate.message}
               </p>
             )}
           </div>
