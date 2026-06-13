@@ -1,13 +1,8 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ReferenceLine,
   XAxis,
   YAxis,
@@ -23,82 +18,47 @@ import {
 import { ChartLegend } from "@/components/dashboard/chart";
 import { Bullet } from "@/components/ui/bullet";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import DashboardOdometer from "@/components/dashboard/odometer";
 import {
-  calculateFullTax,
-  DEFAULT_TAX_CONFIG,
-  type TaxConfig,
-  type TaxSummary,
+  estimateTax,
+  forecastTax,
+  getNextDeadline,
+  PIT_RATE,
+  TAX_FREE_THRESHOLD,
+  TOTAL_TAX_RATE,
+  VAT_RATE,
 } from "@/src/lib/tax-calculator";
 import type { SalesOverviewData } from "@/src/services/analytics";
-import { CHART_COLORS, formatVnd, formatVndFull } from "./format";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { formatVnd, formatVndFull } from "./format";
 import InfoHint from "./info-hint";
 
-type PitMode = "auto" | "method1" | "method2";
+const MONTH_LABELS = [
+  "T1",
+  "T2",
+  "T3",
+  "T4",
+  "T5",
+  "T6",
+  "T7",
+  "T8",
+  "T9",
+  "T10",
+  "T11",
+  "T12",
+];
 
-function getSelectedPit(tax: TaxSummary, pitMode: PitMode) {
-  if (pitMode === "method2") return tax.pitMethod2.pitPayable;
-  if (pitMode === "method1") {
-    if (!tax.pitMethod1.applicable) return tax.pitMethod2.pitPayable;
-    return tax.pitMethod1.pitPayable;
-  }
-  return tax.recommendedPit;
+function formatPct(value: number) {
+  return `${(value * 100).toFixed(1)}%`;
 }
 
-function getSelectedPitMethod(tax: TaxSummary, pitMode: PitMode): 1 | 2 {
-  if (pitMode === "method2") return 2;
-  if (pitMode === "method1") return tax.pitMethod1.applicable ? 1 : 2;
-  return tax.recommendedPitMethod;
-}
-
-function ThresholdIndicator({
-  label,
-  current,
-  threshold,
-}: {
-  label: string;
-  current: number;
-  threshold: number;
-}) {
-  const pct = Math.min((current / threshold) * 100, 100);
-  const over = current >= threshold;
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</span>
-        <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
-          <span className="font-display text-sm">{formatVnd(current)}</span>
-          <span className="text-xs text-muted-foreground">/ {formatVnd(threshold)}</span>
-          {over ? (
-            <Badge variant="destructive" className="text-[10px] px-1.5">
-              Threshold hit
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="text-[10px] px-1.5">
-              Below threshold
-            </Badge>
-          )}
-        </div>
-      </div>
-      <div className={`h-2.5 w-full rounded-full bg-muted overflow-hidden ${over ? "ring-1 ring-destructive" : ""}`}>
-        <div
-          className={`h-full ${over ? "bg-destructive" : "bg-primary"}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
+function formatDeadlineDate(dateStr: string) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(d);
 }
 
 export default function TaxDashboard({
@@ -106,487 +66,494 @@ export default function TaxDashboard({
 }: {
   salesData: SalesOverviewData | undefined;
 }) {
-  const actualRevenue = salesData?.totalRevenue ?? 0;
-  const actualCost = salesData?.totalCost ?? 0;
-
-  const platformRevenue = useMemo(() => {
-    const txs = salesData?.transactions ?? [];
-    return txs
-      .filter((tx) => ["shopee", "lazada", "tiktok_shop"].includes(tx.channel))
-      .reduce((sum, tx) => sum + tx.revenue, 0);
+  // Doanh thu thực tế từng tháng (từ đầu năm tới hiện tại).
+  const monthlyRevenue = useMemo(() => {
+    const arr = new Array(12).fill(0) as number[];
+    (salesData?.revenueByDate ?? []).forEach((item) => {
+      const m = Number(item.date.slice(5, 7));
+      if (m >= 1 && m <= 12) arr[m - 1] += item.revenue;
+    });
+    return arr;
   }, [salesData]);
 
+  const currentMonth = useMemo(() => {
+    const lastWithData = monthlyRevenue.reduce(
+      (last, value, idx) => (value > 0 ? idx + 1 : last),
+      0,
+    );
+    return Math.max(new Date().getMonth() + 1, lastWithData, 1);
+  }, [monthlyRevenue]);
+
+  const forecast = useMemo(
+    () => forecastTax(monthlyRevenue, currentMonth),
+    [monthlyRevenue, currentMonth],
+  );
+
+  // Cho phép người dùng tự điều chỉnh doanh thu cả năm để xem thử thuế.
   const [scenarioRevenue, setScenarioRevenue] = useState<number | null>(null);
-  const [deductibleExpenses, setDeductibleExpenses] = useState<number>(actualCost);
-  const [bhxhEnabled, setBhxhEnabled] = useState(false);
-  const [bhxhBaseSalary, setBhxhBaseSalary] = useState(4_960_000);
-  const [vatDeductedByPlatform, setVatDeductedByPlatform] = useState(true);
-  const [pitMode, setPitMode] = useState<PitMode>("auto");
+  const annualRevenue = scenarioRevenue ?? forecast.projectedAnnualRevenue;
+  const annualTax = useMemo(() => estimateTax(annualRevenue), [annualRevenue]);
+  const isScenario = scenarioRevenue !== null;
 
-  useEffect(() => {
-    if (actualCost > 0) {
-      setDeductibleExpenses((prev) => (prev === 0 ? actualCost : prev));
-    }
-  }, [actualCost]);
+  const nextDeadline = useMemo(() => getNextDeadline(new Date()), []);
 
-  const revenue = scenarioRevenue ?? actualRevenue;
-  const platformRatio = actualRevenue > 0 ? platformRevenue / actualRevenue : 0;
-  const platformVatDeductedAmount = vatDeductedByPlatform
-    ? revenue * platformRatio * DEFAULT_TAX_CONFIG.vatRate
-    : 0;
-
-  const taxConfig: TaxConfig = useMemo(
-    () => ({
-      ...DEFAULT_TAX_CONFIG,
-      bhxhEnabled,
-      bhxhBaseSalary,
-      platformVatDeducted: platformVatDeductedAmount,
-    }),
-    [bhxhEnabled, bhxhBaseSalary, platformVatDeductedAmount],
+  const progressPct = Math.min(
+    (forecast.ytdRevenue / TAX_FREE_THRESHOLD) * 100,
+    100,
+  );
+  const projectedPct = Math.min(
+    (forecast.projectedAnnualRevenue / TAX_FREE_THRESHOLD) * 100,
+    100,
   );
 
-  const baseTax: TaxSummary = useMemo(
-    () => calculateFullTax(revenue, deductibleExpenses, taxConfig),
-    [revenue, deductibleExpenses, taxConfig],
-  );
+  const chartData = forecast.cumulativeByMonth.map((p) => ({
+    month: MONTH_LABELS[p.month - 1],
+    actual: p.isActual ? p.cumulative : null,
+    // Nối liền đường dự báo với đường thực tế tại tháng hiện tại.
+    forecast:
+      p.month >= forecast.currentMonth ? p.cumulative : null,
+  }));
 
-  const selectedPit = getSelectedPit(baseTax, pitMode);
-  const selectedPitMethod = getSelectedPitMethod(baseTax, pitMode);
-  const totalObligation = baseTax.vat.vatPayable + selectedPit + baseTax.bhxh.annualAmount;
-  const netIncomeAfterTax = revenue - deductibleExpenses - totalObligation;
-
-  const monthlyData = useMemo(() => {
-    const byDate = salesData?.revenueByDate ?? [];
-    const monthRevenueMap = new Map<number, number>();
-
-    byDate.forEach((item) => {
-      const month = Number(item.date.slice(5, 7));
-      monthRevenueMap.set(month, (monthRevenueMap.get(month) ?? 0) + item.revenue);
-    });
-
-    const currentMonth = Math.max(1, ...Array.from(monthRevenueMap.keys()));
-    const recentMonths = [currentMonth - 2, currentMonth - 1, currentMonth]
-      .filter((m) => m > 0)
-      .map((m) => monthRevenueMap.get(m) ?? 0)
-      .filter((v) => v > 0);
-    const avgRecent = recentMonths.length > 0 ? recentMonths.reduce((a, b) => a + b, 0) / recentMonths.length : 0;
-
-    const seasonality = [1.0, 0.95, 0.98, 1.0, 1.0, 1.02, 1.06, 1.12, 1.1, 1.08, 1.3, 1.42];
-
-    const baseProjection = Array.from({ length: 12 }, (_, index) => {
-      const month = index + 1;
-      const actual = monthRevenueMap.get(month);
-      if (actual !== undefined) return actual;
-      return avgRecent * seasonality[index];
-    });
-
-    const baseProjectedAnnual = baseProjection.reduce((sum, value) => sum + value, 0);
-    const scaling = baseProjectedAnnual > 0 ? revenue / baseProjectedAnnual : 1;
-    const expenseRatio = revenue > 0 ? deductibleExpenses / revenue : 0;
-
-    let cumRevenue = 0;
-    let cumExpense = 0;
-
-    return baseProjection.map((value, index) => {
-      const month = index + 1;
-      const scaledRevenue = value * scaling;
-      cumRevenue += scaledRevenue;
-      cumExpense += scaledRevenue * expenseRatio;
-
-      const configForMonth: TaxConfig = {
-        ...taxConfig,
-        platformVatDeducted: vatDeductedByPlatform
-          ? cumRevenue * platformRatio * taxConfig.vatRate
-          : 0,
-      };
-
-      const monthTax = calculateFullTax(cumRevenue, cumExpense, configForMonth);
-      const pit = getSelectedPit(monthTax, pitMode);
-      const totalTax = monthTax.vat.vatPayable + pit + monthTax.bhxh.annualAmount;
-
-      const isActual = month <= currentMonth;
-      return {
-        month: `M${month}`,
-        totalTax,
-        totalTaxActual: isActual ? totalTax : null,
-        totalTaxForecast: !isActual || month === currentMonth ? totalTax : null,
-      };
-    });
-  }, [
-    deductibleExpenses,
-    pitMode,
-    platformRatio,
-    revenue,
-    salesData?.revenueByDate,
-    taxConfig,
-    vatDeductedByPlatform,
-  ]);
-
-  const donutData = [
-    { name: "VAT", value: baseTax.vat.vatPayable, fill: CHART_COLORS[0] },
-    { name: `PIT (Method ${selectedPitMethod})`, value: selectedPit, fill: CHART_COLORS[1] },
-    { name: "Social insurance", value: baseTax.bhxh.annualAmount, fill: CHART_COLORS[2] },
-  ].filter((item) => item.value > 0);
-
-  const pitCompareData = [
-    {
-      method: "Method 1 (% of excess revenue)",
-      amount: baseTax.pitMethod1.pitPayable,
-      recommended: baseTax.recommendedPitMethod === 1,
-      selected: selectedPitMethod === 1,
-    },
-    {
-      method: "Method 2 (taxable income)",
-      amount: baseTax.pitMethod2.pitPayable,
-      recommended: baseTax.recommendedPitMethod === 2,
-      selected: selectedPitMethod === 2,
-    },
-  ];
-
-  const otherCost = Math.max(0, deductibleExpenses - actualCost);
-  const waterfallData = [
-    { name: "Revenue", value: revenue },
-    { name: "COGS", value: -actualCost },
-    { name: "Other costs", value: -otherCost },
-    { name: "VAT", value: -baseTax.vat.vatPayable },
-    { name: `PIT M${selectedPitMethod}`, value: -selectedPit },
-    { name: "Social insurance", value: -baseTax.bhxh.annualAmount },
-    { name: "Net income", value: netIncomeAfterTax },
-  ];
-
-  const cumTaxConfig = {
-    totalTaxActual: { label: "Cumulative tax (actual)", color: "var(--chart-5)" },
-    totalTaxForecast: { label: "Cumulative tax (forecast)", color: "var(--chart-3)" },
+  const chartConfig = {
+    actual: { label: "Doanh thu thực tế", color: "var(--chart-1)" },
+    forecast: { label: "Dự báo", color: "var(--chart-3)" },
   } satisfies ChartConfig;
+
+  const exempt = annualTax.isExempt;
 
   return (
     <div className="space-y-8">
+      {/* Giải thích luật — ngắn gọn */}
       <DashboardCard
-        title="2026 TAX THRESHOLDS"
+        title="CÁCH TÍNH THUẾ HỘ KINH DOANH 2026"
         intent="default"
-        addon={<InfoHint text="Revenue threshold indicators for VAT (200M) and PIT (500M)." />}
+        addon={
+          <InfoHint text="Hộ kinh doanh bán hàng hóa, áp dụng từ 01/01/2026. Thuế tính trên doanh thu (tổng tiền bán ra), không phải trên lợi nhuận." />
+        }
       >
-        <div className="space-y-4">
-          <ThresholdIndicator label="VAT threshold (200M)" current={revenue} threshold={200_000_000} />
-          <ThresholdIndicator label="PIT threshold (500M)" current={revenue} threshold={500_000_000} />
+        <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+          <div className="bg-accent rounded-lg p-3">
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Ngưỡng miễn thuế
+            </div>
+            <div className="font-display mt-1 text-lg">
+              {formatVndFull(TAX_FREE_THRESHOLD)} / năm
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Doanh thu cả năm ≤ 500 triệu thì <b>không phải nộp thuế</b>.
+            </p>
+          </div>
+          <div className="bg-accent rounded-lg p-3">
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Thuế suất khi vượt ngưỡng
+            </div>
+            <div className="font-display mt-1 text-lg">
+              {formatPct(TOTAL_TAX_RATE)} trên doanh thu
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Gồm GTGT {formatPct(VAT_RATE)} + TNCN {formatPct(PIT_RATE)}.
+            </p>
+          </div>
+          <div className="bg-accent rounded-lg p-3">
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Kỳ kê khai
+            </div>
+            <div className="font-display mt-1 text-lg">Theo quý</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Hạn nộp: cuối tháng đầu của quý kế tiếp.
+            </p>
+          </div>
         </div>
       </DashboardCard>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
-        <Card className="relative overflow-hidden">
+      {/* Tình trạng + dự báo chính */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card
+          className={`relative overflow-hidden lg:col-span-1 ${exempt ? "ring-2 ring-success/30" : "ring-2 ring-destructive/30"}`}
+        >
           <CardHeader className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2.5"><Bullet />ANNUAL REVENUE</CardTitle>
+            <CardTitle className="flex items-center gap-2.5">
+              <Bullet variant={exempt ? "success" : "destructive"} />
+              TÌNH TRẠNG THUẾ
+            </CardTitle>
           </CardHeader>
-          <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
-            <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
-              <DashboardOdometer value={Math.round(revenue)} className="text-3xl md:text-5xl" />
-              <span className="shrink-0 text-sm">VND</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden">
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2.5"><Bullet />VAT PAYABLE</CardTitle>
-          </CardHeader>
-          <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
-            <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
-              <DashboardOdometer value={Math.round(baseTax.vat.vatPayable)} className="text-3xl md:text-5xl" />
-              <span className="shrink-0 text-sm">VND</span>
-            </div>
-            {baseTax.vat.isExempt && <Badge variant="outline-success" className="mt-1">EXEMPT</Badge>}
+          <CardContent className="bg-accent flex-1 pt-2 md:pt-4">
+            {exempt ? (
+              <>
+                <Badge variant="outline-success" className="text-sm">
+                  Được miễn thuế
+                </Badge>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Doanh thu {isScenario ? "giả định" : "dự báo cả năm"} chưa vượt
+                  ngưỡng 500 triệu nên chưa phát sinh thuế.
+                </p>
+              </>
+            ) : (
+              <>
+                <Badge variant="destructive" className="text-sm">
+                  Phải nộp thuế
+                </Badge>
+                <div className="mt-3 flex flex-nowrap items-end gap-1 whitespace-nowrap">
+                  <DashboardOdometer
+                    value={Math.round(annualTax.total)}
+                    className="text-3xl md:text-4xl"
+                  />
+                  <span className="shrink-0 text-sm">VND</span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Tổng thuế {isScenario ? "theo doanh thu giả định" : "dự báo cả năm"}
+                  {" "}({formatPct(annualTax.effectiveRate)} doanh thu)
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden">
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2.5">
-              <Bullet />PIT PAYABLE
-              <Badge variant="outline" className="text-[9px]">METHOD {selectedPitMethod}</Badge>
+              <Bullet />DOANH THU ĐẾN NAY
             </CardTitle>
           </CardHeader>
-          <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
+          <CardContent className="bg-accent flex-1 pt-2 md:pt-4">
             <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
-              <DashboardOdometer value={Math.round(selectedPit)} className="text-3xl md:text-5xl" />
+              <DashboardOdometer
+                value={Math.round(forecast.ytdRevenue)}
+                className="text-3xl md:text-4xl"
+              />
               <span className="shrink-0 text-sm">VND</span>
             </div>
-            {revenue <= DEFAULT_TAX_CONFIG.pitThreshold && (
-              <Badge variant="outline-success" className="mt-1">EXEMPT</Badge>
-            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Lũy kế tới tháng {forecast.currentMonth}
+            </p>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden">
           <CardHeader className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2.5"><Bullet />SOCIAL INSURANCE</CardTitle>
+            <CardTitle className="flex items-center gap-2.5">
+              <Bullet />DỰ BÁO CẢ NĂM
+            </CardTitle>
           </CardHeader>
-          <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
+          <CardContent className="bg-accent flex-1 pt-2 md:pt-4">
             <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
-              <DashboardOdometer value={Math.round(baseTax.bhxh.annualAmount)} className="text-3xl md:text-5xl" />
+              <DashboardOdometer
+                value={Math.round(forecast.projectedAnnualRevenue)}
+                className="text-3xl md:text-4xl"
+              />
               <span className="shrink-0 text-sm">VND</span>
             </div>
-            {!bhxhEnabled && <Badge variant="secondary" className="mt-1">OFF</Badge>}
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden ring-2 ring-primary/30">
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2.5 text-primary"><Bullet variant="default" />TOTAL OBLIGATION</CardTitle>
-          </CardHeader>
-          <CardContent className="bg-accent relative flex-1 overflow-clip pt-2 md:pt-4">
-            <div className="flex flex-nowrap items-end gap-1 whitespace-nowrap">
-              <DashboardOdometer value={Math.round(totalObligation)} className="text-3xl md:text-5xl" />
-              <span className="shrink-0 text-sm">VND</span>
-            </div>
-            <p className="text-xs font-medium tracking-wide text-muted-foreground mt-1">
-              {revenue > 0 ? ((totalObligation / revenue) * 100).toFixed(1) : 0}% of revenue
+            <p className="mt-1 text-xs text-muted-foreground">
+              Theo nhịp ~{formatVnd(forecast.monthlyRunRate)}/tháng
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Thanh tiến độ tới ngưỡng */}
+      <DashboardCard
+        title="TIẾN ĐỘ TỚI NGƯỠNG 500 TRIỆU"
+        addon={
+          <InfoHint text="So sánh doanh thu thực tế và dự báo cả năm với ngưỡng miễn thuế 500 triệu." />
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">Thực tế đến nay</span>
+              <span className="font-display">
+                {formatVnd(forecast.ytdRevenue)} / {formatVnd(TAX_FREE_THRESHOLD)}
+              </span>
+            </div>
+            <div className="bg-muted h-2.5 w-full overflow-hidden rounded-full">
+              <div
+                className={`h-full ${forecast.alreadyExceeded ? "bg-destructive" : "bg-primary"}`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">Dự báo cả năm</span>
+              <span className="font-display">
+                {formatVnd(forecast.projectedAnnualRevenue)} /{" "}
+                {formatVnd(TAX_FREE_THRESHOLD)}
+              </span>
+            </div>
+            <div className="bg-muted h-2.5 w-full overflow-hidden rounded-full">
+              <div
+                className={`h-full ${forecast.willExceedThreshold ? "bg-destructive" : "bg-success"}`}
+                style={{ width: `${projectedPct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </DashboardCard>
+
+      {/* Khi nào phải đóng + đóng bao nhiêu */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <DashboardCard
-          title="TAX COMPOSITION"
-          addon={<InfoHint text="Breakdown of VAT, PIT, and social insurance in total obligations." />}
+          title="KHI NÀO PHẢI ĐÓNG THUẾ?"
+          addon={
+            <InfoHint text="Thời điểm doanh thu lũy kế chạm ngưỡng 500 triệu và mốc nộp tờ khai gần nhất." />
+          }
         >
-          {donutData.length > 0 ? (
-            <>
-              <div className="bg-accent rounded-lg p-3 w-full">
-                <div className="w-full h-64">
-                  <ChartContainer className="w-full h-full" config={{}}>
-                    <PieChart>
-                      <ChartTooltip
-                        cursor={false}
-                        content={({ payload }) => {
-                          if (!payload?.length) return null;
-                          const row = payload[0];
-                          return (
-                            <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
-                              <div className="font-medium">{row.name}</div>
-                              <div className="text-muted-foreground">{formatVndFull(Number(row.value))}</div>
-                            </div>
-                          );
-                        }}
-                      />
-                      <Pie data={donutData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={95} paddingAngle={3}>
-                        {donutData.map((row, index) => (
-                          <Cell key={index} fill={row.fill} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ChartContainer>
+          <div className="space-y-4">
+            <div className="bg-accent rounded-lg p-4">
+              {forecast.alreadyExceeded ? (
+                <p className="text-sm">
+                  ⚠️ Doanh thu đã <b>vượt ngưỡng 500 triệu</b>
+                  {forecast.crossingMonth
+                    ? ` từ tháng ${forecast.crossingMonth}`
+                    : ""}
+                  . Đã phát sinh nghĩa vụ thuế — cần kê khai và nộp theo quý.
+                </p>
+              ) : forecast.willExceedThreshold && forecast.crossingMonth ? (
+                <p className="text-sm">
+                  Dự kiến doanh thu lũy kế sẽ <b>chạm ngưỡng vào tháng{" "}
+                  {forecast.crossingMonth}</b>. Từ thời điểm đó bạn bắt đầu phát
+                  sinh thuế và phải kê khai cho quý tương ứng.
+                </p>
+              ) : (
+                <p className="text-sm">
+                  ✅ Dự báo cả năm <b>không vượt ngưỡng 500 triệu</b> — chưa phải
+                  nộp thuế. Còn khoảng{" "}
+                  <b>{formatVnd(forecast.remainingToThreshold)}</b> doanh thu nữa
+                  mới chạm ngưỡng.
+                </p>
+              )}
+            </div>
+
+            {nextDeadline && (
+              <div className="bg-accent rounded-lg p-4">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Mốc kê khai gần nhất
+                </div>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="font-medium text-sm">
+                    {nextDeadline.title}
+                  </span>
+                  <Badge variant="outline-warning" className="text-[10px]">
+                    {formatDeadlineDate(nextDeadline.dueDate)}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {nextDeadline.description}
+                </p>
+              </div>
+            )}
+          </div>
+        </DashboardCard>
+
+        <DashboardCard
+          title="ĐÓNG BAO NHIÊU?"
+          addon={
+            <InfoHint text="Chi tiết thuế GTGT, TNCN và tổng thuế theo doanh thu cả năm." />
+          }
+        >
+          <div className="space-y-3">
+            <div className="bg-accent grid grid-cols-3 gap-3 rounded-lg p-4">
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  GTGT (1%)
+                </div>
+                <div className="font-display mt-1 text-lg">
+                  {formatVnd(annualTax.vat)}
                 </div>
               </div>
-              <div className="flex justify-center gap-4 mt-2">
-                {donutData.map((row, index) => (
-                  <div key={index} className="flex items-center gap-1.5 uppercase">
-                    <Bullet style={{ backgroundColor: row.fill }} className="rotate-45" />
-                    <span className="text-sm font-medium text-muted-foreground">{row.name}: {formatVnd(row.value)}</span>
-                  </div>
-                ))}
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  TNCN (0,5%)
+                </div>
+                <div className="font-display mt-1 text-lg">
+                  {formatVnd(annualTax.pit)}
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="bg-accent rounded-lg flex flex-col items-center justify-center h-64 text-muted-foreground uppercase">
-              <Badge variant="outline-success" className="mb-2">No liabilities</Badge>
-              <p className="text-sm">No tax generated in this scenario.</p>
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Tổng (1,5%)
+                </div>
+                <div className="font-display mt-1 text-lg text-primary">
+                  {formatVnd(annualTax.total)}
+                </div>
+              </div>
             </div>
-          )}
-        </DashboardCard>
 
-        <DashboardCard
-          title="PIT METHOD COMPARISON"
-          addon={<InfoHint text="Compares PIT payable between method 1 and method 2. Highlight shows recommendation and selected mode." />}
-        >
-          <div className="bg-accent rounded-lg p-3 w-full">
-            <div className="w-full h-64">
-              <ChartContainer
-                className="w-full h-full"
-                config={{
-                  method1: { label: "Method 1", color: "var(--chart-1)" },
-                  method2: { label: "Method 2", color: "var(--chart-4)" },
-                }}
-              >
-                <BarChart data={pitCompareData} margin={{ left: -12, right: 12, top: 12, bottom: 12 }}>
-                  <CartesianGrid horizontal={false} strokeDasharray="8 8" strokeWidth={2} stroke="var(--muted-foreground)" opacity={0.3} />
-                  <XAxis dataKey="method" tickLine={false} className="text-sm fill-muted-foreground" />
-                  <YAxis tickLine={false} axisLine={false} tickFormatter={formatVnd} className="text-sm fill-muted-foreground" />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" formatter={(value) => formatVndFull(Number(value))} />}
-                  />
-                  <Bar dataKey="amount" radius={4}>
-                    {pitCompareData.map((row, index) => (
-                      <Cell
-                        key={index}
-                        fill={row.recommended ? CHART_COLORS[1] : CHART_COLORS[3]}
-                        stroke={row.selected ? "var(--foreground)" : "transparent"}
-                        strokeWidth={row.selected ? 2 : 0}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </div>
-          </div>
-          <div className="text-center mt-2">
-            <Badge variant="secondary" className="mr-2">Recommended: Method {baseTax.recommendedPitMethod}</Badge>
-            <Badge variant="default">Selected: Method {selectedPitMethod}</Badge>
-          </div>
-        </DashboardCard>
-
-        <DashboardCard
-          title="CUMULATIVE TAX BY MONTH (WITH FORECAST)"
-          addon={<InfoHint text="Solid line is realized cumulative tax, dashed line extends projected cumulative tax to year end." />}
-        >
-          <div className="flex items-center gap-6 mb-3">
-            {Object.entries(cumTaxConfig).map(([key, value]) => (
-              <ChartLegend key={key} label={String(value.label)} color={String(value.color)} />
-            ))}
-          </div>
-          <div className="bg-accent rounded-lg p-3 w-full">
-            <div className="w-full h-64">
-              <ChartContainer className="w-full h-full" config={cumTaxConfig}>
-                <AreaChart data={monthlyData} margin={{ left: -12, right: 12, top: 12, bottom: 12 }}>
-                  <CartesianGrid horizontal={false} strokeDasharray="8 8" strokeWidth={2} stroke="var(--muted-foreground)" opacity={0.3} />
-                  <XAxis dataKey="month" tickLine={false} className="text-sm fill-muted-foreground" />
-                  <YAxis tickLine={false} axisLine={false} tickFormatter={formatVnd} className="text-sm fill-muted-foreground" />
-                  <ReferenceLine y={200_000_000} stroke="var(--destructive)" strokeDasharray="4 4" />
-                  <ReferenceLine y={500_000_000} stroke="var(--warning)" strokeDasharray="4 4" />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" formatter={(value) => formatVndFull(Number(value))} />} />
-                  <Area dataKey="totalTaxActual" type="linear" fill="transparent" stroke="var(--color-totalTaxActual)" strokeWidth={2.4} />
-                  <Area dataKey="totalTaxForecast" type="linear" fill="transparent" stroke="var(--color-totalTaxForecast)" strokeWidth={2.4} strokeDasharray="5 5" />
-                </AreaChart>
-              </ChartContainer>
-            </div>
-          </div>
-        </DashboardCard>
-
-        <DashboardCard
-          title="REVENUE -> TAX -> NET INCOME WATERFALL"
-          addon={<InfoHint text="Shows the path from revenue through costs and taxes to final net income." />}
-        >
-          <div className="bg-accent rounded-lg p-3 w-full">
-            <div className="w-full h-64">
-              <ChartContainer className="w-full h-full" config={{ value: { label: "VND", color: "var(--chart-1)" } }}>
-                <BarChart data={waterfallData} margin={{ left: -12, right: 12, top: 12, bottom: 12 }}>
-                  <CartesianGrid horizontal={false} strokeDasharray="8 8" strokeWidth={2} stroke="var(--muted-foreground)" opacity={0.3} />
-                  <XAxis dataKey="name" tickLine={false} className="text-sm fill-muted-foreground" />
-                  <YAxis tickLine={false} axisLine={false} tickFormatter={formatVnd} className="text-sm fill-muted-foreground" />
-                  <ReferenceLine y={0} stroke="var(--border)" />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" formatter={(value) => formatVndFull(Math.abs(Number(value)))} />}
-                  />
-                  <Bar dataKey="value" radius={4}>
-                    {waterfallData.map((row, index) => (
-                      <Cell key={index} fill={row.value >= 0 ? CHART_COLORS[1] : CHART_COLORS[4]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
+            <div className="bg-accent rounded-lg p-4">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Đã phát sinh đến nay (lũy kế tháng {forecast.currentMonth})
+              </div>
+              <div className="font-display mt-1 text-xl">
+                {formatVnd(forecast.ytdTax.total)}
+              </div>
+              {forecast.ytdTax.isExempt && (
+                <Badge variant="outline-success" className="mt-2">
+                  Chưa phát sinh thuế
+                </Badge>
+              )}
             </div>
           </div>
         </DashboardCard>
       </div>
 
+      {/* Biểu đồ doanh thu lũy kế + ngưỡng */}
       <DashboardCard
-        title="SCENARIO SIMULATOR (WHAT-IF)"
+        title="DOANH THU LŨY KẾ THEO THÁNG"
+        addon={
+          <InfoHint text="Đường liền là doanh thu thực tế, đường nét đứt là dự báo. Đường đỏ là ngưỡng 500 triệu." />
+        }
+      >
+        <div className="mb-3 flex items-center gap-6">
+          {Object.entries(chartConfig).map(([key, value]) => (
+            <ChartLegend
+              key={key}
+              label={String(value.label)}
+              color={String(value.color)}
+            />
+          ))}
+        </div>
+        <div className="bg-accent w-full rounded-lg p-3">
+          <div className="h-72 w-full">
+            <ChartContainer className="h-full w-full" config={chartConfig}>
+              <AreaChart
+                data={chartData}
+                margin={{ left: -12, right: 12, top: 12, bottom: 12 }}
+              >
+                <CartesianGrid
+                  horizontal={false}
+                  strokeDasharray="8 8"
+                  strokeWidth={2}
+                  stroke="var(--muted-foreground)"
+                  opacity={0.3}
+                />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  className="fill-muted-foreground text-sm"
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={formatVnd}
+                  className="fill-muted-foreground text-sm"
+                />
+                <ReferenceLine
+                  y={TAX_FREE_THRESHOLD}
+                  stroke="var(--destructive)"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: "Ngưỡng 500tr",
+                    position: "insideTopRight",
+                    fill: "var(--destructive)",
+                    fontSize: 11,
+                  }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      indicator="dot"
+                      formatter={(value) => formatVndFull(Number(value))}
+                    />
+                  }
+                />
+                <Area
+                  dataKey="actual"
+                  type="linear"
+                  fill="transparent"
+                  stroke="var(--color-actual)"
+                  strokeWidth={2.4}
+                  connectNulls
+                />
+                <Area
+                  dataKey="forecast"
+                  type="linear"
+                  fill="transparent"
+                  stroke="var(--color-forecast)"
+                  strokeWidth={2.4}
+                  strokeDasharray="5 5"
+                  connectNulls
+                />
+              </AreaChart>
+            </ChartContainer>
+          </div>
+        </div>
+      </DashboardCard>
+
+      {/* Thử nghiệm: tự điều chỉnh doanh thu cả năm */}
+      <DashboardCard
+        title="THỬ TÍNH THUẾ THEO DOANH THU GIẢ ĐỊNH"
         intent="default"
-        addon={<InfoHint text="Adjust revenue and deductible costs to instantly recalculate tax liabilities and net income." />}
+        addon={
+          <InfoHint text="Kéo thanh trượt để xem nếu doanh thu cả năm thay đổi thì thuế phải nộp là bao nhiêu." />
+        }
       >
         <div className="space-y-5">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Projected revenue</span>
-              <span className="font-display text-sm">{formatVndFull(revenue)}</span>
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Doanh thu cả năm
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-sm">
+                  {formatVndFull(annualRevenue)}
+                </span>
+                {isScenario && (
+                  <button
+                    type="button"
+                    onClick={() => setScenarioRevenue(null)}
+                    className="text-xs text-muted-foreground underline hover:text-foreground"
+                  >
+                    Về dự báo
+                  </button>
+                )}
+              </div>
             </div>
             <Slider
-              value={[revenue]}
+              value={[annualRevenue]}
               onValueChange={([value]) => setScenarioRevenue(value)}
-              min={200_000_000}
-              max={5_000_000_000}
-              step={10_000_000}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Deductible expenses</span>
-              <span className="font-display text-sm">{formatVndFull(deductibleExpenses)}</span>
-            </div>
-            <Slider
-              value={[deductibleExpenses]}
-              onValueChange={([value]) => setDeductibleExpenses(value)}
               min={0}
-              max={Math.max(revenue, 500_000_000)}
+              max={Math.max(2_000_000_000, forecast.projectedAnnualRevenue * 1.5)}
               step={10_000_000}
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">PIT mode</label>
-              <Select value={pitMode} onValueChange={(value) => setPitMode(value as PitMode)}>
-                <SelectTrigger className="bg-card border-border/60 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto">Auto (best recommended)</SelectItem>
-                  <SelectItem value="method1">Method 1 (% excess revenue)</SelectItem>
-                  <SelectItem value="method2">Method 2 (taxable income x rate)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Platform VAT deducted</label>
-              <div className="flex items-center gap-2 h-9">
-                <Switch checked={vatDeductedByPlatform} onCheckedChange={setVatDeductedByPlatform} />
-                <span className="text-sm font-medium">{vatDeductedByPlatform ? "ON" : "OFF"}</span>
+          <div className="bg-accent grid grid-cols-2 gap-3 rounded-lg p-4 lg:grid-cols-4">
+            <div>
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Tình trạng
+              </div>
+              <div className="mt-1">
+                {annualTax.isExempt ? (
+                  <Badge variant="outline-success">Miễn thuế</Badge>
+                ) : (
+                  <Badge variant="destructive">Phải nộp</Badge>
+                )}
               </div>
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Social insurance</label>
-              <div className="flex items-center gap-2 h-9">
-                <Switch checked={bhxhEnabled} onCheckedChange={setBhxhEnabled} />
-                <span className="text-sm font-medium">{bhxhEnabled ? "ON" : "OFF"}</span>
+            <div>
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                GTGT
+              </div>
+              <div className="font-display text-lg">
+                {formatVnd(annualTax.vat)}
               </div>
             </div>
-
-            {bhxhEnabled && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Social insurance base salary</label>
-                <Input
-                  type="number"
-                  value={bhxhBaseSalary}
-                  onChange={(event) => setBhxhBaseSalary(Number(event.target.value) || 0)}
-                  className="bg-card border-border/60"
-                />
+            <div>
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                TNCN
               </div>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-accent rounded-lg mt-4">
-          <div>
-            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">VAT</div>
-            <div className="font-display text-lg">{formatVnd(baseTax.vat.vatPayable)}</div>
-          </div>
-          <div>
-            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">PIT (M{selectedPitMethod})</div>
-            <div className="font-display text-lg">{formatVnd(selectedPit)}</div>
-          </div>
-          <div>
-            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Social insurance</div>
-            <div className="font-display text-lg">{formatVnd(baseTax.bhxh.annualAmount)}</div>
-          </div>
-          <div>
-            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Net income</div>
-            <div className={`font-display text-xl ${netIncomeAfterTax >= 0 ? "text-success" : "text-destructive"}`}>
-              {formatVnd(netIncomeAfterTax)}
+              <div className="font-display text-lg">
+                {formatVnd(annualTax.pit)}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Tổng thuế
+              </div>
+              <div className="font-display text-xl text-primary">
+                {formatVnd(annualTax.total)}
+              </div>
             </div>
           </div>
         </div>
@@ -594,4 +561,3 @@ export default function TaxDashboard({
     </div>
   );
 }
-

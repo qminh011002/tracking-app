@@ -496,7 +496,7 @@ export function InventoryDetailDialog({
   const detailContent = (
     <>
       {/* Header */}
-      <div className="border-b px-6 pt-6 pb-5">
+      <div className="px-6 pt-6 pb-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-4">
             {item.modelImage ? (

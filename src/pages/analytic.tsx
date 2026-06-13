@@ -15,15 +15,11 @@ import {
   useAnalyticsSalesQuery,
   useAnalyticsProductsQuery,
   useAnalyticsGeoQuery,
-  useAnalyticsCustomersQuery,
-  useAnalyticsInventoryMarginQuery,
   useProvincesQuery,
 } from "@/src/queries/hooks";
 import SalesOverview from "@/src/components/analytics/sales-overview";
 import ProductAnalytics from "@/src/components/analytics/product-analytics";
 import GeoAnalytics from "@/src/components/analytics/geo-analytics";
-import CustomerAnalytics from "@/src/components/analytics/customer-analytics";
-import InventoryMargin from "@/src/components/analytics/inventory-margin";
 import TaxDashboard from "@/src/components/analytics/tax-dashboard";
 import TaxCalendar from "@/src/components/analytics/tax-calendar";
 
@@ -117,18 +113,6 @@ export default function AnalyticPage() {
     fromDate: range.from,
     toDate: range.to,
     provinces: provinces ?? [],
-  });
-
-  const { data: customersData } = useAnalyticsCustomersQuery({
-    storeId,
-    fromDate: range.from,
-    toDate: range.to,
-  });
-
-  const { data: inventoryData } = useAnalyticsInventoryMarginQuery({
-    storeId,
-    fromDate: range.from,
-    toDate: range.to,
   });
 
   // For tax: always use YTD
@@ -232,12 +216,6 @@ export default function AnalyticPage() {
           <TabsTrigger value="geo" className="flex-1 min-w-25">
             Geography
           </TabsTrigger>
-          <TabsTrigger value="customers" className="flex-1 min-w-25">
-            Customers
-          </TabsTrigger>
-          <TabsTrigger value="inventory" className="flex-1 min-w-25">
-            Inventory
-          </TabsTrigger>
           <TabsTrigger value="tax" className="flex-1 min-w-25">
             Tax 2026
           </TabsTrigger>
@@ -256,14 +234,6 @@ export default function AnalyticPage() {
 
         <TabsContent value="geo" className="mt-6">
           {tab === "geo" ? <GeoAnalytics data={geoData} /> : null}
-        </TabsContent>
-
-        <TabsContent value="customers" className="mt-6">
-          {tab === "customers" ? <CustomerAnalytics data={customersData} /> : null}
-        </TabsContent>
-
-        <TabsContent value="inventory" className="mt-6">
-          {tab === "inventory" ? <InventoryMargin data={inventoryData} /> : null}
         </TabsContent>
 
         <TabsContent value="tax" className="mt-6">

@@ -11,7 +11,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PackageSearch, Search, TriangleAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  CheckCheck,
+  Loader2,
+  PackageSearch,
+  Search,
+  Trash2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import {
   InventoryCard,
   type InventoryItem as InventoryCardItem,
@@ -43,10 +63,13 @@ import { InventoryPaginationControls } from "@/src/components/inventory/inventor
 import { InventoryActions } from "@/src/components/inventory/inventory-actions";
 import {
   sortModelsForPicker,
+  useDeleteInventoryMutation,
   useInventoryListQuery,
   useModelsQuery,
   useProvincesQuery,
 } from "@/src/queries/hooks";
+import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 type InventoryFilter = "all" | InventoryStatus;
 
@@ -144,6 +167,14 @@ export default function InventoryPage() {
     React.useState<InventoryCardItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
+  const [selectionMode, setSelectionMode] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const deleteInventoryMutation = useDeleteInventoryMutation();
+  const isBulkDeleting = deleteInventoryMutation.isPending;
+
   React.useEffect(() => {
     setPage(1);
   }, [query, filter, sortBy, appliedFilters]);
@@ -204,6 +235,64 @@ export default function InventoryPage() {
     if (nextSelected) setSelectedItem(nextSelected);
   }, [items, selectedItem]);
 
+  const exitSelectionMode = React.useCallback(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelect = React.useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const pageItemIds = React.useMemo(() => items.map((x) => x.id), [items]);
+  const allPageSelected =
+    pageItemIds.length > 0 && pageItemIds.every((id) => selectedIds.has(id));
+
+  const toggleSelectAllOnPage = React.useCallback(() => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const everySelected =
+        pageItemIds.length > 0 && pageItemIds.every((id) => next.has(id));
+      if (everySelected) pageItemIds.forEach((id) => next.delete(id));
+      else pageItemIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }, [pageItemIds]);
+
+  const handleBulkDelete = React.useCallback(async () => {
+    if (!storeId || selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    const results = await Promise.allSettled(
+      ids.map((id) =>
+        deleteInventoryMutation.mutateAsync({ storeId, id }),
+      ),
+    );
+    const failed = results.filter((r) => r.status === "rejected").length;
+    const succeeded = ids.length - failed;
+
+    if (succeeded > 0) {
+      toast({
+        title: "Inventory deleted",
+        description: `${succeeded} item${succeeded === 1 ? "" : "s"} removed.`,
+      });
+    }
+    if (failed > 0) {
+      toast({
+        variant: "destructive",
+        title: "Some deletions failed",
+        description: `${failed} item${failed === 1 ? "" : "s"} could not be deleted.`,
+      });
+    }
+
+    setBulkDeleteOpen(false);
+    exitSelectionMode();
+  }, [storeId, selectedIds, deleteInventoryMutation, exitSelectionMode]);
+
   return (
     <DashboardPageLayout
       header={{
@@ -262,12 +351,60 @@ export default function InventoryPage() {
                 <SelectItem value="stock_age_desc">Longest stock</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant={selectionMode ? "secondary" : "outline"}
+              onClick={() =>
+                selectionMode ? exitSelectionMode() : setSelectionMode(true)
+              }
+            >
+              {selectionMode ? (
+                <>
+                  <X className="size-4" />
+
+                </>
+              ) : (
+                <>
+                  <CheckCheck className="size-4" />
+
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
-        <div className="text-sm text-muted-foreground">
-          {totalItems} {totalItems === 1 ? "item" : "items"}
-        </div>
+        {selectionMode ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-2">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={allPageSelected}
+                onCheckedChange={toggleSelectAllOnPage}
+                aria-label="Select all on this page"
+              />
+              <span className="text-sm text-muted-foreground">
+                {selectedIds.size > 0
+                  ? `${selectedIds.size} selected`
+                  : "Select items to delete"}
+              </span>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={selectedIds.size === 0 || isBulkDeleting}
+              onClick={() => setBulkDeleteOpen(true)}
+            >
+              {isBulkDeleting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Delete{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+            </Button>
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">
+            {totalItems} {totalItems === 1 ? "item" : "items"}
+          </div>
+        )}
 
         {!loadingStoreId && !storeId && (
           <Empty className="border border-dashed">
@@ -297,26 +434,51 @@ export default function InventoryPage() {
             ? Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
               <InventoryCardSkeleton key={`inventory-skeleton-${index}`} />
             ))
-            : items.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="h-full w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                onClick={() => {
-                  const isDesktop = window.matchMedia(
-                    "(min-width: 1024px)",
-                  ).matches;
-                  if (!isDesktop) {
-                    navigate(`/inventory/${item.id}`);
-                    return;
-                  }
-                  setSelectedItem(item);
-                  setIsDialogOpen(true);
-                }}
-              >
-                <InventoryCard item={item} />
-              </button>
-            ))}
+            : items.map((item) => {
+              const isSelected = selectedIds.has(item.id);
+              return (
+                <div key={item.id} className="relative h-full">
+                  <button
+                    type="button"
+                    aria-pressed={selectionMode ? isSelected : undefined}
+                    className={cn(
+                      "h-full w-full rounded-xl text-left transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      selectionMode &&
+                      isSelected &&
+                      "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                    )}
+                    onClick={() => {
+                      if (selectionMode) {
+                        toggleSelect(item.id);
+                        return;
+                      }
+                      const isDesktop = window.matchMedia(
+                        "(min-width: 1024px)",
+                      ).matches;
+                      if (!isDesktop) {
+                        navigate(`/inventory/${item.id}`);
+                        return;
+                      }
+                      setSelectedItem(item);
+                      setIsDialogOpen(true);
+                    }}
+                  >
+                    <InventoryCard item={item} />
+                  </button>
+                  {selectionMode && (
+                    <div className="absolute left-3 top-3 z-10">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleSelect(item.id)}
+                        onClick={(event) => event.stopPropagation()}
+                        aria-label={`Select ${item.title}`}
+                        className="size-5 border-2 bg-background shadow-sm data-[state=checked]:border-primary"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </div>
 
         {!loading && items.length === 0 && !error && storeId && (
@@ -351,6 +513,41 @@ export default function InventoryPage() {
         }}
         onDeleted={() => undefined}
       />
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedIds.size} item
+              {selectedIds.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected inventory along with their
+              buy and sell transactions. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleBulkDelete();
+              }}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardPageLayout>
   );
 }

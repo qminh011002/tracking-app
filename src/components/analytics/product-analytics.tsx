@@ -40,11 +40,26 @@ export default function ProductAnalytics({
 
   const top10 = data.topProducts.slice(0, 10);
 
-  const brandDonut = (salesData?.revenueByBrand ?? []).map((item, index) => ({
+  const brandsByRevenue = salesData?.revenueByBrand ?? [];
+
+  const brandDonut = brandsByRevenue.map((item, index) => ({
     name: item.brand,
     value: item.revenue,
     fill: CHART_COLORS[index % CHART_COLORS.length],
   }));
+
+  // Brands ranked by units sold (orders), with avg price for context.
+  const brandUnits = [...brandsByRevenue]
+    .map((item, index) => ({
+      brand: item.brand,
+      units: item.orders,
+      revenue: item.revenue,
+      avgPrice: item.orders > 0 ? item.revenue / item.orders : 0,
+      fill: CHART_COLORS[index % CHART_COLORS.length],
+    }))
+    .sort((a, b) => b.units - a.units);
+
+  const totalBrandUnits = brandUnits.reduce((sum, item) => sum + item.units, 0);
 
   const topProductConfig = {
     revenue: { label: "Revenue", color: "var(--chart-1)" },
@@ -53,6 +68,10 @@ export default function ProductAnalytics({
 
   const scatterConfig = {
     avgPrice: { label: "Price", color: "var(--chart-2)" },
+  } satisfies ChartConfig;
+
+  const brandUnitsConfig = {
+    units: { label: "Units sold", color: "var(--chart-3)" },
   } satisfies ChartConfig;
 
   return (
@@ -177,7 +196,7 @@ export default function ProductAnalytics({
         </DashboardCard>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardCard
           title="REVENUE SHARE BY BRAND"
           addon={<InfoHint text="Shows brand-level revenue contribution so you can evaluate portfolio concentration." />}
@@ -224,6 +243,65 @@ export default function ProductAnalytics({
                 <span className="text-sm font-medium text-muted-foreground">{item.name}</span>
               </div>
             ))}
+          </div>
+        </DashboardCard>
+
+        <DashboardCard
+          title="UNITS SOLD BY BRAND"
+          addon={<InfoHint text="How many units each brand has sold in the period, ranked. Hover for revenue and average selling price." />}
+        >
+          <div className="bg-accent rounded-lg p-3 w-full">
+            <div className="w-full h-80">
+              <ChartContainer className="w-full h-full" config={brandUnitsConfig}>
+                <BarChart data={brandUnits} layout="vertical" margin={{ left: 10, right: 12, top: 12, bottom: 12 }}>
+                  <CartesianGrid
+                    horizontal={false}
+                    strokeDasharray="8 8"
+                    strokeWidth={2}
+                    stroke="var(--muted-foreground)"
+                    opacity={0.3}
+                  />
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    tickLine={false}
+                    className="text-sm fill-muted-foreground"
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="brand"
+                    width={110}
+                    tickLine={false}
+                    className="text-sm fill-muted-foreground"
+                    tickFormatter={(value) =>
+                      String(value).length > 16 ? `${String(value).slice(0, 16)}...` : String(value)
+                    }
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={({ payload }) => {
+                      if (!payload?.length) return null;
+                      const row = payload[0].payload;
+                      const share =
+                        totalBrandUnits > 0 ? ((row.units / totalBrandUnits) * 100).toFixed(1) : "0";
+                      return (
+                        <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+                          <div className="font-medium">{row.brand}</div>
+                          <div className="text-muted-foreground">Units: {row.units} ({share}%)</div>
+                          <div className="text-muted-foreground">Revenue: {formatVndFull(row.revenue)}</div>
+                          <div className="text-muted-foreground">Avg price: {formatVndFull(row.avgPrice)}</div>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Bar dataKey="units" radius={4}>
+                    {brandUnits.map((item, index) => (
+                      <Cell key={index} fill={item.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+            </div>
           </div>
         </DashboardCard>
       </div>

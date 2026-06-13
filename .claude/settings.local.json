@@ -30,7 +30,11 @@
       "Bash(node *)",
       "Bash(rtk proxy *)",
       "WebFetch(domain:shadcnuikit.com)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "WebFetch(domain:thuvienphapluat.vn)",
+      "WebFetch(domain:sme.misa.vn)",
+      "WebFetch(domain:ketoanthuanthien.vn)",
+      "Bash(rtk wc *)"
     ]
   }
 }
