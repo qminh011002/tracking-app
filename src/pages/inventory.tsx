@@ -11,14 +11,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowDownAZ, Search } from "lucide-react";
+import { PackageSearch, Search, TriangleAlert } from "lucide-react";
 import {
   InventoryCard,
   type InventoryItem as InventoryCardItem,
   type InventoryStatus,
 } from "@/components/inventory/inventory-card";
 import { InventoryDetailDialog } from "@/components/inventory/inventory-detail-dialog";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useStoreId } from "@/src/hooks/use-store-id";
 import {
   type InventoryItem as SupabaseInventoryItem,
@@ -90,37 +96,36 @@ function toCardItem(item: SupabaseInventoryItem): InventoryCardItem {
 
 function InventoryCardSkeleton() {
   return (
-    <Card className="rounded-lg">
-      <CardHeader className="h-auto gap-2 pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <Skeleton className="h-8 w-44" />
-          <Skeleton className="h-7 w-20 rounded-full" />
-        </div>
-        <Skeleton className="h-4 w-40" />
-      </CardHeader>
-      <CardContent className="space-y-4 bg-background/50">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2 pr-3">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-7 w-24" />
-            <Skeleton className="h-5 w-28" />
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-3 w-20" />
-          </div>
-          <div className="space-y-2 pl-1">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-7 w-24" />
-            <Skeleton className="h-5 w-28" />
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-3 w-20" />
+    <div className="flex h-full flex-col rounded-xl bg-card shadow-sm">
+      <div className="flex items-start justify-between gap-3 p-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="size-16 rounded-lg" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-28" />
           </div>
         </div>
-        <div className="pt-3 space-y-2">
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-8 w-28" />
-        </div>
-      </CardContent>
-    </Card>
+        <Skeleton className="h-5 w-16 rounded-md" />
+      </div>
+      <div className="flex-1 space-y-4 px-4 pb-4">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div key={index} className="flex gap-3">
+            <Skeleton className="mt-1 size-2 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between border-t px-4 py-3">
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+    </div>
   );
 }
 
@@ -226,7 +231,7 @@ export default function InventoryPage() {
                 value={queryInput}
                 onChange={(event) => setQueryInput(event.target.value)}
                 placeholder="Search model, IMEI, contact..."
-                className="pl-9 bg-card border-border/60"
+                className="pl-9"
               />
             </div>
           </div>
@@ -246,16 +251,12 @@ export default function InventoryPage() {
               value={sortBy}
               onValueChange={(value) => setSortBy(value as InventorySortBy)}
             >
-              <SelectTrigger className="w-42.5 bg-card border-none">
+              <SelectTrigger className="w-42.5">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="created_desc">Created</SelectItem>
-                <SelectItem value="buy_date_desc">
-                  <span className="inline-flex items-center gap-1">
-                    Buy date <ArrowDownAZ className="size-3.5" />
-                  </span>
-                </SelectItem>
+                <SelectItem value="buy_date_desc">Buy date</SelectItem>
                 <SelectItem value="name">Name</SelectItem>
                 <SelectItem value="in_stock_first">In stock</SelectItem>
                 <SelectItem value="stock_age_desc">Longest stock</SelectItem>
@@ -264,19 +265,27 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        <div className="text-xs md:text-sm text-muted-foreground uppercase tracking-[0.12em]">
-          {totalItems} assets found
+        <div className="text-sm text-muted-foreground">
+          {totalItems} {totalItems === 1 ? "item" : "items"}
         </div>
 
         {!loadingStoreId && !storeId && (
-          <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
-            Missing store ID in your account. Please sign up again with Store ID
-            or update your user metadata.
-          </div>
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <TriangleAlert />
+              </EmptyMedia>
+              <EmptyTitle>Missing store ID</EmptyTitle>
+              <EmptyDescription>
+                Your account has no store ID. Please sign up again with a store
+                ID or update your user metadata.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
 
         {error && (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-4 text-sm text-destructive">
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error instanceof Error
               ? error.message
               : "Failed to load inventory"}
@@ -292,7 +301,7 @@ export default function InventoryPage() {
               <button
                 key={item.id}
                 type="button"
-                className="h-full w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="h-full w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 onClick={() => {
                   const isDesktop = window.matchMedia(
                     "(min-width: 1024px)",
@@ -311,9 +320,18 @@ export default function InventoryPage() {
         </div>
 
         {!loading && items.length === 0 && !error && storeId && (
-          <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
-            No inventory matched your filter.
-          </div>
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <PackageSearch />
+              </EmptyMedia>
+              <EmptyTitle>No results</EmptyTitle>
+              <EmptyDescription>
+                No inventory matched your search or filters. Try adjusting
+                them.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
 
         <InventoryPaginationControls

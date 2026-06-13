@@ -27,7 +27,9 @@
       "Read(//tmp/**)",
       "Bash(curl -s -o /tmp/wc_mp.html -w 'HTTP %{http_code} | %{size_download} bytes\\\\n' -X POST https://baohanhdientu.sony.com.vn/TraCuu/Home/CheckWarranty -F categoryID=17 -F modelName=WF1000XM5 -F serialNumber=2154101)",
       "Bash(curl -s -o /tmp/wc_proxy.html -w 'HTTP %{http_code} | %{size_download} bytes | type=%{content_type}\\\\n' -X POST http://localhost:5173/api/warranty-check -F categoryID=17 -F modelName=WF1000XM5 -F serialNumber=2154101)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(rtk proxy *)",
+      "WebFetch(domain:shadcnuikit.com)"
     ]
   }
 }

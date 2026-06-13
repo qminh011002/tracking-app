@@ -1,6 +1,4 @@
-import { ArrowDownRight, CalendarDays, MapPin, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export type InventoryStatus = "in_stock" | "sold";
@@ -52,6 +50,11 @@ function netProfit(item: InventoryItem) {
   return item.sellInfo.amount - item.buyInfo.amount;
 }
 
+function profitMargin(item: InventoryItem) {
+  if (item.sellInfo.amount === null || item.buyInfo.amount <= 0) return null;
+  return ((item.sellInfo.amount - item.buyInfo.amount) / item.buyInfo.amount) * 100;
+}
+
 function getStockAgeDays(dateRaw?: string) {
   if (!dateRaw) return 0;
   const start = Date.parse(dateRaw);
@@ -61,56 +64,86 @@ function getStockAgeDays(dateRaw?: string) {
   return Math.max(0, diff);
 }
 
-type TransactionRowProps = {
-  kind: "buy" | "sell";
+type TimelineStepProps = {
+  label: string;
+  date?: string;
   amount: number | null;
   name: string;
   province: string;
-  date: string;
+  state: "done" | "pending";
+  isLast?: boolean;
 };
 
-function TransactionRow({ kind, amount, name, province, date }: TransactionRowProps) {
-  const isBuy = kind === "buy";
+function TimelineStep({
+  label,
+  date,
+  amount,
+  name,
+  province,
+  state,
+  isLast,
+}: TimelineStepProps) {
+  const isDone = state === "done";
   return (
-    <div className="space-y-2 px-4 py-3.5">
-      <div className="flex items-baseline justify-between gap-3">
+    <div className="relative flex gap-3 pb-0">
+      {/* Rail */}
+      <div className="flex flex-col items-center">
         <span
           className={cn(
-            "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider",
-            isBuy ? "text-warning" : "text-primary",
+            "mt-1 size-2 shrink-0 rounded-full ring-4",
+            isDone
+              ? "bg-primary ring-primary/15"
+              : "bg-transparent ring-0 border border-dashed border-muted-foreground/50 size-2.5 mt-0.75",
           )}
-        >
+        />
+        {!isLast && (
           <span
             className={cn(
-              "size-1.5 rounded-full",
-              isBuy ? "bg-warning" : "bg-primary",
+              "mt-1 w-px flex-1",
+              isDone
+                ? "bg-border"
+                : "border-l border-dashed border-border bg-transparent",
             )}
           />
-          {isBuy ? "Buy" : "Sell"}
-        </span>
-        <span
-          className={cn(
-            "whitespace-nowrap text-base font-bold tabular-nums",
-            amount === null
-              ? "text-muted-foreground"
-              : isBuy
-                ? "text-warning"
-                : "text-primary",
-          )}
-        >
-          {formatMoney(amount)}
-        </span>
+        )}
       </div>
-      <div className="truncate text-sm font-medium text-foreground">{name}</div>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="flex min-w-0 items-center gap-1">
-          <MapPin className="size-3.5 shrink-0" />
-          <span className="truncate">{province || "—"}</span>
-        </span>
-        <span className="flex shrink-0 items-center gap-1">
-          <CalendarDays className="size-3.5 shrink-0" />
-          {date}
-        </span>
+
+      {/* Content */}
+      <div className={cn("min-w-0 flex-1", !isLast && "pb-4")}>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-xs font-medium text-muted-foreground">
+            {label}
+            {date ? (
+              <span className="font-normal text-muted-foreground/70">
+                {" "}
+                · {date}
+              </span>
+            ) : null}
+          </span>
+          <span
+            className={cn(
+              "whitespace-nowrap text-sm font-semibold tabular-nums",
+              amount === null ? "font-normal text-muted-foreground" : "text-foreground",
+            )}
+          >
+            {formatMoney(amount)}
+          </span>
+        </div>
+        <div className="mt-0.5 flex items-baseline justify-between gap-3">
+          <span
+            className={cn(
+              "truncate text-sm",
+              isDone ? "text-foreground" : "text-muted-foreground",
+            )}
+          >
+            {name}
+          </span>
+          {province && province !== "-" ? (
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {province}
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -118,106 +151,115 @@ function TransactionRow({ kind, amount, name, province, date }: TransactionRowPr
 
 export function InventoryCard({ item }: { item: InventoryItem }) {
   const profit = netProfit(item);
+  const margin = profitMargin(item);
   const stockAgeDays = getStockAgeDays(item.buyInfo.dateRaw);
   const isSold = item.status === "sold";
 
   return (
-    <Card className="group flex h-full flex-col gap-0 overflow-hidden rounded-xl border-border/60 py-0 transition-all duration-200 hover:cursor-pointer hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-black/40">
+    <div className="group flex h-full flex-col rounded-xl bg-card text-card-foreground shadow-sm transition-all duration-200 hover:cursor-pointer hover:shadow-md">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
+      <div className="flex items-start justify-between gap-3 p-4">
         <div className="flex min-w-0 items-center gap-3">
           {item.modelImage ? (
-            <div className="size-14 shrink-0 overflow-hidden ">
+            <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg">
               <img
                 src={item.modelImage}
                 alt={item.title}
                 loading="lazy"
                 decoding="async"
-                className="size-full object-contain object-center p-1"
+                className="size-full object-contain transition-transform duration-200 group-hover:scale-105"
               />
             </div>
           ) : null}
-          <div className="min-w-0 space-y-1">
-            <h3 className="truncate text-base font-semibold leading-tight text-foreground">
+          <div className="min-w-0 space-y-0.5">
+            <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
               {item.title}
             </h3>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Tag className="size-3 shrink-0" />
-              <span className="truncate tabular-nums">{item.label}</span>
-            </div>
+            <p className="truncate text-xs text-muted-foreground tabular-nums">
+              {item.label}
+            </p>
           </div>
         </div>
         <Badge
-          variant={isSold ? "secondary" : "outline-success"}
-          className="shrink-0 gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide"
+          variant="secondary"
+          className="shrink-0 gap-1.5 rounded-md font-normal text-muted-foreground"
         >
           <span
             className={cn(
               "size-1.5 rounded-full",
-              isSold ? "bg-muted-foreground" : "bg-success",
+              isSold ? "bg-muted-foreground/60" : "bg-success",
             )}
           />
           {isSold ? "Sold" : "In stock"}
         </Badge>
       </div>
 
-      {/* Transaction ledger */}
-      <div className="flex flex-1 flex-col px-5 pb-5">
-        <div className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30">
-          <TransactionRow
-            kind="buy"
-            amount={item.buyInfo.amount}
-            name={item.buyInfo.name}
-            province={item.buyInfo.province}
-            date={item.buyInfo.date}
+      {/* Transaction timeline */}
+      <div className="flex-1 px-4 pb-4">
+        <TimelineStep
+          label="Purchased"
+          date={item.buyInfo.date}
+          amount={item.buyInfo.amount}
+          name={item.buyInfo.name}
+          province={item.buyInfo.province}
+          state="done"
+        />
+        {isSold ? (
+          <TimelineStep
+            label="Sold"
+            date={item.sellInfo.date}
+            amount={item.sellInfo.amount}
+            name={item.sellInfo.name}
+            province={item.sellInfo.province}
+            state="done"
+            isLast
           />
-
-          {isSold ? (
-            <TransactionRow
-              kind="sell"
-              amount={item.sellInfo.amount}
-              name={item.sellInfo.name}
-              province={item.sellInfo.province}
-              date={item.sellInfo.date}
-            />
-          ) : (
-            <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <span className="size-1.5 rounded-full bg-muted-foreground/50" />
-                Stock age
-              </span>
-              <span className="whitespace-nowrap text-base font-bold tabular-nums text-foreground">
-                {stockAgeDays}
-                <span className="ml-1 text-xs font-normal text-muted-foreground">
-                  day{stockAgeDays === 1 ? "" : "s"}
-                </span>
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Net profit footer */}
-        <div className="mt-auto flex items-center justify-between gap-4 pt-4">
-          <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            <ArrowDownRight className="size-3.5" />
-            Net profit
-          </span>
-          <span
-            className={cn(
-              "whitespace-nowrap text-lg font-bold tabular-nums",
-              profit === null
-                ? "text-sm font-medium text-muted-foreground"
-                : profit >= 0
-                  ? "text-success"
-                  : "text-destructive",
-            )}
-          >
-            {profit === null
-              ? "Pending"
-              : `${profit > 0 ? "+" : ""}${formatMoney(profit)}`}
-          </span>
-        </div>
+        ) : (
+          <TimelineStep
+            label="Awaiting sale"
+            amount={null}
+            name={`${stockAgeDays} day${stockAgeDays === 1 ? "" : "s"} in stock`}
+            province=""
+            state="pending"
+            isLast
+          />
+        )}
       </div>
-    </Card>
+
+      {/* Footer — net profit */}
+      <div className="flex items-center justify-between gap-4 rounded-b-xl border-t bg-muted/40 px-4 py-3">
+        <span className="text-xs font-medium text-muted-foreground">
+          Net profit
+        </span>
+        {profit === null ? (
+          <span className="text-sm text-muted-foreground">Pending</span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <span
+              className={cn(
+                "whitespace-nowrap text-sm font-semibold tabular-nums",
+                profit >= 0 ? "text-success" : "text-destructive",
+              )}
+            >
+              {profit > 0 ? "+" : ""}
+              {formatMoney(profit)}
+            </span>
+            {margin !== null && (
+              <span
+                className={cn(
+                  "rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums",
+                  profit >= 0
+                    ? "bg-success/10 text-success"
+                    : "bg-destructive/10 text-destructive",
+                )}
+              >
+                {margin > 0 ? "+" : ""}
+                {margin.toFixed(1)}%
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

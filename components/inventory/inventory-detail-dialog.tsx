@@ -3,12 +3,10 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Images,
   MapPin,
   Pencil,
   Phone,
   Plus,
-  Tag,
   Trash2,
   X,
 } from "lucide-react";
@@ -75,6 +73,11 @@ function Field({
 function netProfit(item: InventoryItem) {
   if (item.sellInfo.amount === null) return null;
   return item.sellInfo.amount - item.buyInfo.amount;
+}
+
+function profitMargin(item: InventoryItem) {
+  if (item.sellInfo.amount === null || item.buyInfo.amount <= 0) return null;
+  return ((item.sellInfo.amount - item.buyInfo.amount) / item.buyInfo.amount) * 100;
 }
 
 function formatAddress(addressDetail: string, province: string) {
@@ -198,6 +201,7 @@ export function InventoryDetailDialog({
     updateWarrantyMutation.isPending;
   const updatingStatus = updateStatusMutation.isPending;
   const profit = item ? netProfit(item) : null;
+  const margin = item ? profitMargin(item) : null;
   const [statusValue, setStatusValue] = React.useState(item?.status ?? "in_stock");
 
   const openLightboxAt = React.useCallback((index: number) => {
@@ -492,32 +496,30 @@ export function InventoryDetailDialog({
   const detailContent = (
     <>
       {/* Header */}
-      <div className="border-b border-border/60 px-6 pt-6 pb-4 space-y-3">
+      <div className="border-b px-6 pt-6 pb-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start gap-3">
-              {item.modelImage ? (
-                <div className="size-20 shrink-0 overflow-hidden rounded-md bg-muted/20">
-                  <img
-                    src={item.modelImage}
-                    alt={item.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="size-full object-contain object-center p-0.5"
-                  />
-                </div>
-              ) : null}
-              <div className="space-y-1 min-w-0">
-                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground/70">
-                  Inventory detail
-                </p>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground truncate">
-                  {item.title}
-                </h2>
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            {item.modelImage ? (
+              <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+                <img
+                  src={item.modelImage}
+                  alt={item.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="size-full object-contain"
+                />
               </div>
+            ) : null}
+            <div className="min-w-0 space-y-1">
+              <h2 className="truncate text-lg font-semibold leading-tight tracking-tight text-foreground">
+                {item.title}
+              </h2>
+              <p className="truncate text-sm text-muted-foreground tabular-nums">
+                {item.label}
+              </p>
             </div>
           </div>
-          <div className="mr-4 mt-1 shrink-0">
+          <div className="mr-6 mt-0.5 shrink-0">
             <Select
               value={statusValue}
               onValueChange={(value) =>
@@ -525,14 +527,13 @@ export function InventoryDetailDialog({
               }
               disabled={updatingStatus}
             >
-              <SelectTrigger
-                className={cn(
-                  "h-8 rounded-full border px-3 text-xs font-semibold uppercase tracking-[0.12em]",
-                  statusValue === "sold"
-                    ? "border-transparent bg-secondary text-secondary-foreground"
-                    : "border-success/60 bg-transparent text-success",
-                )}
-              >
+              <SelectTrigger className="h-8 gap-1.5 rounded-md px-3 text-xs">
+                <span
+                  className={cn(
+                    "size-1.5 shrink-0 rounded-full",
+                    statusValue === "sold" ? "bg-muted-foreground/60" : "bg-success",
+                  )}
+                />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -542,75 +543,77 @@ export function InventoryDetailDialog({
             </Select>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground/60 uppercase tracking-[0.16em]">
-          <Tag className="size-3.5" />
-          <span>{item.label}</span>
-        </div>
       </div>
 
       {/* Main Content */}
       <div className="px-6 pb-6 space-y-5">
-        {/* Summary Cards - Simplified */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-success/20 bg-success/5 p-4 space-y-1.5">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Buy Price
+        {/* Summary stats */}
+        <div className="grid grid-cols-1 divide-y rounded-xl bg-muted/40 md:grid-cols-3 md:divide-x md:divide-y-0">
+          <div className="space-y-1 p-4">
+            <div className="text-xs font-medium text-muted-foreground">
+              Purchase price
             </div>
-            <div className="whitespace-nowrap text-xl font-bold tabular-nums tracking-tight text-success">
+            <div className="whitespace-nowrap text-lg font-semibold tabular-nums tracking-tight text-foreground">
               {formatMoney(item.buyInfo.amount)}
             </div>
-            <div className="truncate text-sm text-muted-foreground">
+            <div className="truncate text-xs text-muted-foreground">
               from {item.buyInfo.name}
             </div>
           </div>
 
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1.5">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Sell Price
+          <div className="space-y-1 p-4">
+            <div className="text-xs font-medium text-muted-foreground">
+              Sale price
             </div>
             <div
               className={cn(
-                "whitespace-nowrap text-xl font-bold tabular-nums tracking-tight",
+                "whitespace-nowrap text-lg font-semibold tabular-nums tracking-tight",
                 item.sellInfo.amount === null
                   ? "text-muted-foreground"
-                  : "text-primary",
+                  : "text-foreground",
               )}
             >
               {formatMoney(item.sellInfo.amount)}
             </div>
-            <div className="truncate text-sm text-muted-foreground">
-              to {item.sellInfo.name}
+            <div className="truncate text-xs text-muted-foreground">
+              {item.sellInfo.amount === null ? "Awaiting sale" : `to ${item.sellInfo.name}`}
             </div>
           </div>
 
-          <div
-            className={cn(
-              "rounded-xl border p-4 space-y-1.5",
-              profit === null
-                ? "border-border/60 bg-muted/30"
-                : profit >= 0
-                  ? "border-success/25 bg-success/10"
-                  : "border-destructive/25 bg-destructive/10",
-            )}
-          >
-            <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Net Profit
+          <div className="space-y-1 p-4">
+            <div className="text-xs font-medium text-muted-foreground">
+              Net profit
             </div>
-            <div
-              className={cn(
-                "whitespace-nowrap text-xl font-bold tabular-nums tracking-tight",
-                profit === null
-                  ? "text-muted-foreground"
-                  : profit >= 0
-                    ? "text-success"
-                    : "text-destructive",
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "whitespace-nowrap text-lg font-semibold tabular-nums tracking-tight",
+                  profit === null
+                    ? "text-muted-foreground"
+                    : profit >= 0
+                      ? "text-success"
+                      : "text-destructive",
+                )}
+              >
+                {profit === null
+                  ? "—"
+                  : `${profit > 0 ? "+" : ""}${formatMoney(profit)}`}
+              </span>
+              {margin !== null && (
+                <span
+                  className={cn(
+                    "rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums",
+                    (profit ?? 0) >= 0
+                      ? "bg-success/10 text-success"
+                      : "bg-destructive/10 text-destructive",
+                  )}
+                >
+                  {margin > 0 ? "+" : ""}
+                  {margin.toFixed(1)}%
+                </span>
               )}
-            >
-              {profit === null
-                ? "—"
-                : `${profit > 0 ? "+" : ""}${formatMoney(profit)}`}
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               {profit === null ? "Pending" : profit >= 0 ? "Profit" : "Loss"}
             </div>
           </div>
@@ -619,17 +622,14 @@ export function InventoryDetailDialog({
         {/* Details Section */}
         {isEditing && form ? (
           <div className="space-y-4 pt-2">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Update Information
+            <h3 className="text-sm font-medium text-foreground">
+              Update information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
-                <div className="flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-success" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                    Buy information
-                  </span>
-                </div>
+              <div className="space-y-3 rounded-xl bg-muted/40 p-4">
+                <span className="text-sm font-medium text-foreground">
+                  Purchase
+                </span>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Amount (VND)" htmlFor="buy-edit-amount">
                     <Input
@@ -761,7 +761,7 @@ export function InventoryDetailDialog({
                   />
                 </Field>
                 <div className="space-y-2 pt-1">
-                  <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     Upload images
                   </label>
                   <input
@@ -810,22 +810,17 @@ export function InventoryDetailDialog({
                     >
                       <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
                         <Plus className="size-4" />
-                        <span className="text-[10px] uppercase tracking-[0.12em]">
-                          Image
-                        </span>
+                        <span className="text-[10px] font-medium">Image</span>
                       </div>
                     </label>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
-                <div className="flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-primary" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                    Sell information
-                  </span>
-                </div>
+              <div className="space-y-3 rounded-xl bg-muted/40 p-4">
+                <span className="text-sm font-medium text-foreground">
+                  Sale
+                </span>
                 {item.sellInfo.transactionId ? (
                   <>
                     <div className="grid grid-cols-2 gap-3">
@@ -923,12 +918,12 @@ export function InventoryDetailDialog({
                     </Field>
                   </>
                 ) : (
-                  <div className="rounded-md border border-border/60 bg-card px-3 py-4 text-xs text-muted-foreground">
-                    No SELL transaction yet.
+                  <div className="rounded-lg border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
+                    No sale transaction yet
                   </div>
                 )}
                 <div className="space-y-2 pt-1">
-                  <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  <label className="text-xs font-medium text-muted-foreground">
                     Upload images
                   </label>
                   <input
@@ -977,9 +972,7 @@ export function InventoryDetailDialog({
                     >
                       <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
                         <Plus className="size-4" />
-                        <span className="text-[10px] uppercase tracking-[0.12em]">
-                          Image
-                        </span>
+                        <span className="text-[10px] font-medium">Image</span>
                       </div>
                     </label>
                   </div>
@@ -990,15 +983,12 @@ export function InventoryDetailDialog({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+            <div className="space-y-4 rounded-xl bg-muted/40 p-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-success" />
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-                    Buy Information
-                  </h3>
-                </div>
-                <span className="whitespace-nowrap text-base font-bold tabular-nums text-success">
+                <h3 className="text-sm font-medium text-foreground">
+                  Purchase
+                </h3>
+                <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-foreground">
                   {formatMoney(item.buyInfo.amount)}
                 </span>
               </div>
@@ -1037,27 +1027,15 @@ export function InventoryDetailDialog({
               </div>
             </div>
 
-            <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+            <div className="space-y-4 rounded-xl bg-muted/40 p-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "size-2 rounded-full",
-                      item.sellInfo.amount === null
-                        ? "bg-muted-foreground/40"
-                        : "bg-primary",
-                    )}
-                  />
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-                    Sell Information
-                  </h3>
-                </div>
+                <h3 className="text-sm font-medium text-foreground">Sale</h3>
                 <span
                   className={cn(
-                    "whitespace-nowrap text-base font-bold tabular-nums",
+                    "whitespace-nowrap text-sm font-semibold tabular-nums",
                     item.sellInfo.amount === null
                       ? "text-muted-foreground"
-                      : "text-primary",
+                      : "text-foreground",
                   )}
                 >
                   {formatMoney(item.sellInfo.amount)}
@@ -1093,14 +1071,9 @@ export function InventoryDetailDialog({
 
         {/* Images Section */}
         <div className="space-y-3 pt-2">
-          <div className="flex items-center gap-x-3">
-            <div className="flex items-center gap-2">
-              <Images className="size-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-[0.12em]">
-                Images
-              </h3>
-            </div>
-            <span className="text-xs text-muted-foreground/80">
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-sm font-medium text-foreground">Images</h3>
+            <span className="text-xs text-muted-foreground">
               {images.length} photo{images.length === 1 ? "" : "s"}
             </span>
           </div>
@@ -1116,7 +1089,7 @@ export function InventoryDetailDialog({
                 return (
                   <div
                     key={imageKey}
-                    className="group relative aspect-square overflow-hidden rounded-xl border border-border/60 bg-muted/20"
+                    className="group relative aspect-square overflow-hidden rounded-lg bg-muted/40"
                   >
                     <button
                       type="button"
@@ -1154,7 +1127,7 @@ export function InventoryDetailDialog({
               })}
             </div>
           ) : (
-            <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
               No images
             </div>
           )}
@@ -1220,7 +1193,7 @@ export function InventoryDetailDialog({
   return (
     <>
       {embedded ? (
-        <div className="rounded-lg border border-border/60 bg-card overflow-hidden">
+        <div className="overflow-hidden rounded-xl bg-card shadow-sm">
           {detailContent}
         </div>
       ) : (
