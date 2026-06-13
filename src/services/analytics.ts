@@ -86,6 +86,8 @@ export type SalesOverviewData = {
   totalProfit: number;
   totalCost: number;
   prevPeriodRevenue: number;
+  prevPeriodProfit?: number;
+  prevPeriodOrders?: number;
   revenueByDate: {
     date: string;
     revenue: number;
@@ -182,18 +184,26 @@ export async function getAnalyticsSalesOverview(params: {
   const rows = (data ?? []) as unknown as SellRow[];
 
   let prevRevenue = 0;
+  let prevProfit = 0;
+  let prevOrders = 0;
   if (prevFromDate && prevToDate) {
     const prevQuery = supabase
       .from("sell_transactions")
-      .select("sell_price")
+      .select("sell_price, buy_transactions (buy_price)")
       .eq("store_id", storeId)
       .gte("sell_date", prevFromDate)
       .lte("sell_date", prevToDate);
     const { data: prevData } = await prevQuery;
-    prevRevenue = (prevData ?? []).reduce(
-      (sum, r: { sell_price: number | null }) => sum + toNumber(r.sell_price),
-      0,
-    );
+    const prevRows = (prevData ?? []) as unknown as {
+      sell_price: number | null;
+      buy_transactions: { buy_price: number | null } | null;
+    }[];
+    prevOrders = prevRows.length;
+    for (const r of prevRows) {
+      const sell = toNumber(r.sell_price);
+      prevRevenue += sell;
+      prevProfit += sell - toNumber(r.buy_transactions?.buy_price);
+    }
   }
 
   let totalRevenue = 0;
@@ -324,6 +334,8 @@ export async function getAnalyticsSalesOverview(params: {
     totalProfit,
     totalCost,
     prevPeriodRevenue: prevRevenue,
+    prevPeriodProfit: prevProfit,
+    prevPeriodOrders: prevOrders,
     revenueByDate,
     revenueByChannel,
     revenueByModel,

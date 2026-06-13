@@ -49,6 +49,15 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
   const stockPct = totalDevices > 0 ? (data.inStockCount / totalDevices) * 100 : 0;
   const soldPct = totalDevices > 0 ? (data.soldCount / totalDevices) * 100 : 0;
 
+  // Sell-through = units sold / (units sold + units on hand).
+  const sellThrough = totalDevices > 0 ? (data.soldCount / totalDevices) * 100 : 0;
+  // Inventory turnover ≈ COGS / current inventory value (cost basis).
+  const turnover =
+    data.totalInventoryValue > 0 ? data.costBreakdown.cogs / data.totalInventoryValue : 0;
+  // GMROI = gross profit / average inventory cost.
+  const gmroi =
+    data.totalInventoryValue > 0 ? data.costBreakdown.grossProfit / data.totalInventoryValue : 0;
+
   const waterfall = [
     { name: "Revenue", value: data.costBreakdown.revenue },
     { name: "COGS", value: -data.costBreakdown.cogs },
@@ -98,6 +107,39 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
           icon={BoomIcon}
           intent={data.costBreakdown.grossProfit > 0 ? "positive" : "negative"}
           direction={data.costBreakdown.grossProfit > 0 ? "up" : "down"}
+        />
+        <DashboardStat
+          label="SELL-THROUGH"
+          value={sellThrough.toFixed(1)}
+          odometerValue={Number(sellThrough.toFixed(1))}
+          odometerFormat="(,ddd).d"
+          unitLabel="%"
+          description="Units sold vs total stocked"
+          icon={ProcessorIcon}
+          intent={sellThrough >= 50 ? "positive" : "neutral"}
+          direction={sellThrough >= 50 ? "up" : undefined}
+        />
+        <DashboardStat
+          label="INVENTORY TURNOVER"
+          value={turnover.toFixed(2)}
+          odometerValue={Number(turnover.toFixed(2))}
+          odometerFormat="(,ddd).dd"
+          unitLabel="x"
+          description="COGS / inventory value"
+          icon={GearIcon}
+          intent={turnover >= 1 ? "positive" : "neutral"}
+          direction={turnover >= 1 ? "up" : undefined}
+        />
+        <DashboardStat
+          label="GMROI"
+          value={gmroi.toFixed(2)}
+          odometerValue={Number(gmroi.toFixed(2))}
+          odometerFormat="(,ddd).dd"
+          unitLabel="x"
+          description="Gross profit per VND of stock"
+          icon={BoomIcon}
+          intent={gmroi >= 1 ? "positive" : "negative"}
+          direction={gmroi >= 1 ? "up" : "down"}
         />
       </div>
 

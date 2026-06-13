@@ -375,7 +375,7 @@ export default function DevicePage() {
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="h-16 w-16 rounded-lg object-cover shrink-0"
+                        className="h-16 w-16 rounded-lg object-contain p-1 shrink-0"
                       />
                     ) : (
                       <div className="h-16 w-16 rounded-lg bg-muted/20 grid place-items-center text-muted-foreground shrink-0">
@@ -389,7 +389,7 @@ export default function DevicePage() {
                           <img
                             src={item.brand_logo}
                             alt={item.brand_name ?? "Brand"}
-                            className="h-4 w-4 rounded-sm object-cover"
+                            className="h-6 w-6 rounded-sm object-contain bg-white"
                           />
                         ) : (
                           <div className="h-4 w-4 rounded-sm border border-border/60 bg-muted/20" />
@@ -467,7 +467,7 @@ export default function DevicePage() {
                       <img
                         src={brand.logo}
                         alt={brand.name}
-                        className="h-12 w-12 rounded-lg object-cover shrink-0"
+                        className="h-12 w-12 rounded-lg object-contain bg-white p-1 shrink-0"
                       />
                     ) : (
                       <div className="h-12 w-12 rounded-lg bg-muted/20 grid place-items-center text-muted-foreground shrink-0">
@@ -571,7 +571,7 @@ export default function DevicePage() {
                 <img
                   src={createImagePreview}
                   alt="New model preview"
-                  className="h-16 w-16 rounded-md object-cover border border-border/60"
+                  className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               )}
             </div>
@@ -656,13 +656,13 @@ export default function DevicePage() {
                 <img
                   src={editImagePreview}
                   alt="Updated model preview"
-                  className="h-16 w-16 rounded-md object-cover border border-border/60"
+                  className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               ) : editingModel?.image ? (
                 <img
                   src={editingModel.image}
                   alt={editingModel.name}
-                  className="h-16 w-16 rounded-md object-cover border border-border/60"
+                  className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               ) : null}
               {!editImagePreview && !editingModel?.image && (
@@ -744,7 +744,7 @@ export default function DevicePage() {
                 <img
                   src={createBrandImagePreview}
                   alt="Brand logo preview"
-                  className="h-16 w-16 rounded-md object-cover border border-border/60"
+                  className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               )}
             </div>
@@ -822,13 +822,13 @@ export default function DevicePage() {
                 <img
                   src={editBrandImagePreview}
                   alt="Updated brand logo preview"
-                  className="h-16 w-16 rounded-md object-cover border border-border/60"
+                  className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               ) : editingBrand?.logo ? (
                 <img
                   src={editingBrand.logo}
                   alt={editingBrand.name}
-                  className="h-16 w-16 rounded-md object-cover border border-border/60"
+                  className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               ) : (
                 <div className="h-16 w-16 rounded-md border border-border/60 bg-muted/20 grid place-items-center text-muted-foreground">
@@ -877,8 +877,8 @@ export default function DevicePage() {
         confirmText="Delete"
         loading={Boolean(
           deleteBrandTarget &&
-            deleteBrandMutation.isPending &&
-            deletingBrandId === deleteBrandTarget.id,
+          deleteBrandMutation.isPending &&
+          deletingBrandId === deleteBrandTarget.id,
         )}
         onConfirm={async () => {
           if (!deleteBrandTarget) return;

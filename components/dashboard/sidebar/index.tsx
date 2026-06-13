@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import AtomIcon from "@/components/icons/atom";
-import BracketsIcon from "@/components/icons/brackets";
 import ProcessorIcon from "@/components/icons/proccesor";
 import CuteRobotIcon from "@/components/icons/cute-robot";
 import EmailIcon from "@/components/icons/email";
@@ -46,17 +45,10 @@ const data = {
       title: "Tools",
       items: [
         {
-          title: "Overview",
-          url: "/",
-          icon: BracketsIcon,
-          isActive: true,
-          locked: false,
-        },
-        {
           title: "Analytic",
           url: "/analytic",
           icon: ChartArea,
-          isActive: false,
+          isActive: true,
           locked: false,
         },
         {

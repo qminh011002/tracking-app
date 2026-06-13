@@ -55,7 +55,7 @@ export function ModelCombobox({
                     alt={item.name}
                     loading="lazy"
                     decoding="async"
-                    className="size-9 shrink-0 rounded-sm object-cover"
+                    className="size-9 shrink-0 rounded-sm object-contain bg-white p-0.5"
                   />
                 ) : (
                   <div className="size-9 shrink-0 rounded-sm bg-muted/40" />
