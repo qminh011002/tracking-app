@@ -40,7 +40,7 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
   if (!data) {
     return (
       <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
-        Loading data...
+        Đang tải dữ liệu...
       </div>
     );
   }
@@ -59,73 +59,73 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
     data.totalInventoryValue > 0 ? data.costBreakdown.grossProfit / data.totalInventoryValue : 0;
 
   const waterfall = [
-    { name: "Revenue", value: data.costBreakdown.revenue },
-    { name: "COGS", value: -data.costBreakdown.cogs },
-    { name: "Shipping", value: -data.costBreakdown.shippingCost },
-    { name: "Gross profit", value: data.costBreakdown.grossProfit },
+    { name: "Doanh thu", value: data.costBreakdown.revenue },
+    { name: "Giá vốn", value: -data.costBreakdown.cogs },
+    { name: "Phí vận chuyển", value: -data.costBreakdown.shippingCost },
+    { name: "Lợi nhuận gộp", value: data.costBreakdown.grossProfit },
   ];
 
   const marginLineConfig = {
-    marginPct: { label: "Gross margin %", color: "var(--chart-2)" },
+    marginPct: { label: "Biên lợi nhuận gộp %", color: "var(--chart-2)" },
   } satisfies ChartConfig;
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardStat
-          label="IN STOCK"
+          label="CÒN HÀNG"
           value={String(data.inStockCount)}
           odometerValue={data.inStockCount}
-          description={`${stockPct.toFixed(0)}% of all devices`}
+          description={`${stockPct.toFixed(0)}% trên tổng thiết bị`}
           icon={GearIcon}
           intent="neutral"
         />
         <DashboardStat
-          label="SOLD"
+          label="ĐÃ BÁN"
           value={String(data.soldCount)}
           odometerValue={data.soldCount}
-          description={`${soldPct.toFixed(0)}% of all devices`}
+          description={`${soldPct.toFixed(0)}% trên tổng thiết bị`}
           icon={ProcessorIcon}
           intent={data.soldCount > 0 ? "positive" : "neutral"}
           direction={data.soldCount > 0 ? "up" : undefined}
         />
         <DashboardStat
-          label="INVENTORY VALUE"
+          label="GIÁ TRỊ KHO HÀNG"
           value={String(Math.round(data.totalInventoryValue))}
           odometerValue={Math.round(data.totalInventoryValue)}
           unitLabel="VND"
-          description="Total cost value of in-stock units"
+          description="Tổng giá vốn của các đơn vị còn hàng"
           icon={GearIcon}
           intent="neutral"
         />
         <DashboardStat
-          label="GROSS PROFIT"
+          label="LỢI NHUẬN GỘP"
           value={String(Math.round(data.costBreakdown.grossProfit))}
           odometerValue={Math.round(data.costBreakdown.grossProfit)}
           unitLabel="VND"
-          description="After COGS and shipping"
+          description="Sau giá vốn và phí vận chuyển"
           icon={BoomIcon}
           intent={data.costBreakdown.grossProfit > 0 ? "positive" : "negative"}
           direction={data.costBreakdown.grossProfit > 0 ? "up" : "down"}
         />
         <DashboardStat
-          label="SELL-THROUGH"
+          label="TỶ LỆ BÁN HẾT"
           value={sellThrough.toFixed(1)}
           odometerValue={Number(sellThrough.toFixed(1))}
           odometerFormat="(,ddd).d"
           unitLabel="%"
-          description="Units sold vs total stocked"
+          description="Số lượng đã bán so với tổng nhập kho"
           icon={ProcessorIcon}
           intent={sellThrough >= 50 ? "positive" : "neutral"}
           direction={sellThrough >= 50 ? "up" : undefined}
         />
         <DashboardStat
-          label="INVENTORY TURNOVER"
+          label="VÒNG QUAY KHO HÀNG"
           value={turnover.toFixed(2)}
           odometerValue={Number(turnover.toFixed(2))}
           odometerFormat="(,ddd).dd"
           unitLabel="x"
-          description="COGS / inventory value"
+          description="Giá vốn / giá trị kho hàng"
           icon={GearIcon}
           intent={turnover >= 1 ? "positive" : "neutral"}
           direction={turnover >= 1 ? "up" : undefined}
@@ -136,7 +136,7 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
           odometerValue={Number(gmroi.toFixed(2))}
           odometerFormat="(,ddd).dd"
           unitLabel="x"
-          description="Gross profit per VND of stock"
+          description="Lợi nhuận gộp trên mỗi VND tồn kho"
           icon={BoomIcon}
           intent={gmroi >= 1 ? "positive" : "negative"}
           direction={gmroi >= 1 ? "up" : "down"}
@@ -144,8 +144,8 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
       </div>
 
       <DashboardCard
-        title="STOCK-TO-SAFETY GAUGE (TOP SKUS)"
-        addon={<InfoHint text="Gauge shows stock ratio versus safety stock. >100% is healthy, <80% needs replenishment." />}
+        title="ĐỒNG HỒ TỒN KHO SO VỚI MỨC AN TOÀN (TOP SKU)"
+        addon={<InfoHint text="Đồng hồ hiển thị tỷ lệ tồn kho so với mức tồn kho an toàn. >100% là khỏe mạnh, <80% cần nhập thêm." />}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {data.inventoryByModel.slice(0, 8).map((item) => {
@@ -157,7 +157,7 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
                 <div className="mt-1 flex h-40 items-center justify-center overflow-hidden">
                   <ChartContainer
                     className="flex h-full w-full items-center justify-center"
-                    config={{ ratio: { label: "Ratio", color: gaugeColor(ratio) } }}
+                    config={{ ratio: { label: "Tỷ lệ", color: gaugeColor(ratio) } }}
                   >
                     <RadialBarChart
                       width={180}
@@ -175,7 +175,7 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
                 </div>
                 <div className="font-display text-lg whitespace-nowrap">{ratio.toFixed(0)}%</div>
                 <div className="text-xs text-muted-foreground whitespace-nowrap">
-                  Stock: {item.inStock} | Safety: {item.safetyStock}
+                  Tồn kho: {item.inStock} | Mức an toàn: {item.safetyStock}
                 </div>
               </div>
             );
@@ -185,8 +185,8 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardCard
-          title="COST WATERFALL TO GROSS PROFIT"
-          addon={<InfoHint text="Breaks down revenue into COGS and shipping to show resulting gross profit." />}
+          title="BIỂU ĐỒ THÁC CHI PHÍ ĐẾN LỢI NHUẬN GỘP"
+          addon={<InfoHint text="Phân tách doanh thu thành giá vốn và phí vận chuyển để cho thấy lợi nhuận gộp thu được." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-72">
@@ -230,11 +230,11 @@ export default function InventoryMargin({ data }: { data: InventoryMarginData | 
         </DashboardCard>
 
         <DashboardCard
-          title="MONTHLY GROSS MARGIN %"
-          addon={<InfoHint text="Tracks gross margin percentage by month to spot profitability trend changes." />}
+          title="BIÊN LỢI NHUẬN GỘP % THEO THÁNG"
+          addon={<InfoHint text="Theo dõi phần trăm biên lợi nhuận gộp theo từng tháng để phát hiện thay đổi xu hướng lợi nhuận." />}
         >
           <div className="flex items-center gap-6 mb-3">
-            <ChartLegend label="Gross margin %" color="var(--chart-2)" />
+            <ChartLegend label="Biên lợi nhuận gộp %" color="var(--chart-2)" />
           </div>
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-72">

@@ -6,8 +6,8 @@ export default function NotFoundPage() {
   return (
     <DashboardPageLayout
       header={{
-        title: "Not found",
-        description: "page under construction",
+        title: "Không tìm thấy",
+        description: "trang đang được xây dựng",
         icon: CuteRobotIcon,
       }}
     >
@@ -22,10 +22,10 @@ export default function NotFoundPage() {
 
         <div className="flex flex-col items-center justify-center gap-2">
           <h1 className="text-xl font-bold uppercase text-muted-foreground">
-            Not found, yet
+            Chưa tìm thấy
           </h1>
           <p className="text-sm max-w-sm text-center text-muted-foreground text-balance">
-            Fork on v0 and start promoting your way to new pages.
+            Fork trên v0 và bắt đầu xây dựng các trang mới của bạn.
           </p>
         </div>
       </div>

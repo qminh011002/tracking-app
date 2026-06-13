@@ -39,12 +39,12 @@ export function ModelCombobox({
       itemToStringValue={(item: ModelItem) => item.id}
     >
       <ComboboxInput
-        placeholder={loading ? "Loading models..." : "Select model"}
+        placeholder={loading ? "Đang tải model..." : "Chọn model"}
         disabled={loading}
         className={cn("w-full", className)}
       />
       <ComboboxContent className={contentClassName}>
-        <ComboboxEmpty>No model found.</ComboboxEmpty>
+        <ComboboxEmpty>Không tìm thấy model.</ComboboxEmpty>
         <ComboboxList className={listClassName}>
           {(item: ModelItem) => (
             <ComboboxItem key={item.id} value={item}>

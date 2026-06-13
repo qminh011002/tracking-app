@@ -159,12 +159,12 @@ export default function DevicePage() {
 
   React.useEffect(() => {
     if (!modelsError) return;
-    setError(modelsError instanceof Error ? modelsError.message : "Failed to load models");
+    setError(modelsError instanceof Error ? modelsError.message : "Không thể tải danh sách model");
   }, [modelsError]);
 
   React.useEffect(() => {
     if (!brandsError) return;
-    setError(brandsError instanceof Error ? brandsError.message : "Failed to load brands");
+    setError(brandsError instanceof Error ? brandsError.message : "Không thể tải danh sách thương hiệu");
   }, [brandsError]);
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -183,7 +183,7 @@ export default function DevicePage() {
       setCreateBrandId("");
       setCreateImageFile(null);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create model");
+      setCreateError(err instanceof Error ? err.message : "Không thể tạo model");
     }
   };
 
@@ -213,7 +213,7 @@ export default function DevicePage() {
       setEditName("");
       setEditBrandId("");
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Failed to update model");
+      setEditError(err instanceof Error ? err.message : "Không thể cập nhật model");
     }
   };
 
@@ -222,7 +222,7 @@ export default function DevicePage() {
     try {
       await deleteModelMutation.mutateAsync({ storeId, id });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete model");
+      setError(err instanceof Error ? err.message : "Không thể xóa model");
     }
   };
 
@@ -238,7 +238,7 @@ export default function DevicePage() {
       setCreateBrandName("");
       setCreateBrandImageFile(null);
     } catch (err) {
-      setCreateBrandError(err instanceof Error ? err.message : "Failed to create brand");
+      setCreateBrandError(err instanceof Error ? err.message : "Không thể tạo thương hiệu");
     }
   };
 
@@ -265,7 +265,7 @@ export default function DevicePage() {
       setEditBrandName("");
       setEditBrandImageFile(null);
     } catch (err) {
-      setEditBrandError(err instanceof Error ? err.message : "Failed to update brand");
+      setEditBrandError(err instanceof Error ? err.message : "Không thể cập nhật thương hiệu");
     }
   };
 
@@ -273,22 +273,22 @@ export default function DevicePage() {
     try {
       await deleteBrandMutation.mutateAsync({ id });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete brand");
+      setError(err instanceof Error ? err.message : "Không thể xóa thương hiệu");
     }
   };
 
   return (
     <DashboardPageLayout
       header={{
-        title: "Catalog Management",
+        title: "Quản lý danh mục",
         icon: AtomIcon,
       }}
     >
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <TabsList>
-            <TabsTrigger value="devices">Devices</TabsTrigger>
-            <TabsTrigger value="brands">Brands</TabsTrigger>
+            <TabsTrigger value="devices">Thiết bị</TabsTrigger>
+            <TabsTrigger value="brands">Thương hiệu</TabsTrigger>
           </TabsList>
           {activeTab === "devices" ? (
             <Button
@@ -298,7 +298,7 @@ export default function DevicePage() {
               onClick={() => setCreateOpen(true)}
             >
               <Plus className="size-6" />
-              Add Device
+              Thêm thiết bị
             </Button>
           ) : (
             <Button
@@ -308,14 +308,14 @@ export default function DevicePage() {
               onClick={() => setCreateBrandOpen(true)}
             >
               <Plus className="size-6" />
-              Add Brand
+              Thêm thương hiệu
             </Button>
           )}
         </div>
 
         {!loadingStoreId && !storeId && (
           <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
-            Missing store ID in your account.
+            Tài khoản của bạn chưa có mã cửa hàng.
           </div>
         )}
 
@@ -332,12 +332,12 @@ export default function DevicePage() {
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search model name..."
+                placeholder="Tìm tên model..."
                 className="pl-9 bg-card border-border/60"
               />
             </div>
             <div className="text-xs md:text-sm text-muted-foreground uppercase tracking-[0.12em]">
-              {items.length} models
+              {items.length} model
             </div>
           </div>
 
@@ -361,7 +361,7 @@ export default function DevicePage() {
             </div>
           ) : items.length === 0 ? (
             <div className="rounded-lg bg-card/40 px-4 py-10 text-center text-muted-foreground uppercase">
-              No model found.
+              Không tìm thấy model nào.
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -388,14 +388,14 @@ export default function DevicePage() {
                         {item.brand_logo ? (
                           <img
                             src={item.brand_logo}
-                            alt={item.brand_name ?? "Brand"}
+                            alt={item.brand_name ?? "Thương hiệu"}
                             className="h-6 w-6 rounded-sm object-contain bg-white"
                           />
                         ) : (
                           <div className="h-4 w-4 rounded-sm border border-border/60 bg-muted/20" />
                         )}
                         <span className="uppercase tracking-[0.08em]">
-                          {item.brand_name ?? "Unknown brand"}
+                          {item.brand_name ?? "Thương hiệu không xác định"}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground uppercase tracking-[0.12em]">
@@ -431,12 +431,12 @@ export default function DevicePage() {
               <Input
                 value={brandQuery}
                 onChange={(event) => setBrandQuery(event.target.value)}
-                placeholder="Search brand name..."
+                placeholder="Tìm tên thương hiệu..."
                 className="pl-9 bg-card border-border/60"
               />
             </div>
             <div className="text-xs md:text-sm text-muted-foreground uppercase tracking-[0.12em]">
-              {filteredBrands.length} brands
+              {filteredBrands.length} thương hiệu
             </div>
           </div>
 
@@ -456,7 +456,7 @@ export default function DevicePage() {
             </div>
           ) : filteredBrands.length === 0 ? (
             <div className="rounded-lg bg-card/40 px-4 py-10 text-center text-muted-foreground uppercase">
-              No brand found.
+              Không tìm thấy thương hiệu nào.
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -517,12 +517,12 @@ export default function DevicePage() {
       >
         <DialogContent className="sm:max-w-md border-none">
           <DialogHeader>
-            <DialogTitle>Add Model</DialogTitle>
-            <DialogDescription>Create a new model for this store.</DialogDescription>
+            <DialogTitle>Thêm model</DialogTitle>
+            <DialogDescription>Tạo model mới cho cửa hàng này.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="create-model-name">Model Name</Label>
+              <Label htmlFor="create-model-name">Tên model</Label>
               <Input
                 id="create-model-name"
                 value={createName}
@@ -531,10 +531,10 @@ export default function DevicePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-model-brand">Brand</Label>
+              <Label htmlFor="create-model-brand">Thương hiệu</Label>
               <Select value={createBrandId} onValueChange={setCreateBrandId}>
                 <SelectTrigger id="create-model-brand" className="w-full">
-                  <SelectValue placeholder="Select brand" />
+                  <SelectValue placeholder="Chọn thương hiệu" />
                 </SelectTrigger>
                 <SelectContent>
                   {brands.map((brand) => (
@@ -546,7 +546,7 @@ export default function DevicePage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-model-image">Image</Label>
+              <Label htmlFor="create-model-image">Hình ảnh</Label>
               <input
                 id="create-model-image"
                 type="file"
@@ -560,17 +560,17 @@ export default function DevicePage() {
               >
                 <div className="flex flex-col items-center gap-1 text-muted-foreground">
                   <Plus className="size-5" />
-                  <span className="text-xs uppercase tracking-[0.12em]">Image</span>
+                  <span className="text-xs uppercase tracking-[0.12em]">Hình ảnh</span>
                 </div>
               </label>
-              <p className="text-xs text-muted-foreground">Supports PNG, JPG, JPEG, WEBP, GIF.</p>
+              <p className="text-xs text-muted-foreground">Hỗ trợ PNG, JPG, JPEG, WEBP, GIF.</p>
               {createImageFile && (
                 <p className="text-xs text-muted-foreground truncate">{createImageFile.name}</p>
               )}
               {createImagePreview && (
                 <img
                   src={createImagePreview}
-                  alt="New model preview"
+                  alt="Xem trước model mới"
                   className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               )}
@@ -578,10 +578,10 @@ export default function DevicePage() {
             {createError && <p className="text-sm text-destructive">{createError}</p>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-                Cancel
+                Hủy
               </Button>
               <Button type="submit" disabled={createLoading || !createBrandId}>
-                {createLoading ? "Creating..." : "Create"}
+                {createLoading ? "Đang tạo..." : "Tạo"}
               </Button>
             </DialogFooter>
           </form>
@@ -602,12 +602,12 @@ export default function DevicePage() {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Model</DialogTitle>
-            <DialogDescription>Update model.</DialogDescription>
+            <DialogTitle>Sửa model</DialogTitle>
+            <DialogDescription>Cập nhật model.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-model-name">Model Name</Label>
+              <Label htmlFor="edit-model-name">Tên model</Label>
               <Input
                 id="edit-model-name"
                 value={editName}
@@ -616,10 +616,10 @@ export default function DevicePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-model-brand">Brand</Label>
+              <Label htmlFor="edit-model-brand">Thương hiệu</Label>
               <Select value={editBrandId} onValueChange={setEditBrandId}>
                 <SelectTrigger id="edit-model-brand" className="w-full">
-                  <SelectValue placeholder="Select brand" />
+                  <SelectValue placeholder="Chọn thương hiệu" />
                 </SelectTrigger>
                 <SelectContent>
                   {brands.map((brand) => (
@@ -631,7 +631,7 @@ export default function DevicePage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-model-image">Image</Label>
+              <Label htmlFor="edit-model-image">Hình ảnh</Label>
               <input
                 id="edit-model-image"
                 type="file"
@@ -645,17 +645,17 @@ export default function DevicePage() {
               >
                 <div className="flex flex-col items-center gap-1 text-muted-foreground">
                   <Plus className="size-5" />
-                  <span className="text-xs uppercase tracking-[0.12em]">Image</span>
+                  <span className="text-xs uppercase tracking-[0.12em]">Hình ảnh</span>
                 </div>
               </label>
-              <p className="text-xs text-muted-foreground">Supports PNG, JPG, JPEG, WEBP, GIF.</p>
+              <p className="text-xs text-muted-foreground">Hỗ trợ PNG, JPG, JPEG, WEBP, GIF.</p>
               {editImageFile && (
                 <p className="text-xs text-muted-foreground truncate">{editImageFile.name}</p>
               )}
               {editImagePreview ? (
                 <img
                   src={editImagePreview}
-                  alt="Updated model preview"
+                  alt="Xem trước model đã cập nhật"
                   className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               ) : editingModel?.image ? (
@@ -674,10 +674,10 @@ export default function DevicePage() {
             {editError && <p className="text-sm text-destructive">{editError}</p>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-                Cancel
+                Hủy
               </Button>
               <Button type="submit" disabled={editLoading || !editBrandId}>
-                {editLoading ? "Saving..." : "Save"}
+                {editLoading ? "Đang lưu..." : "Lưu"}
               </Button>
             </DialogFooter>
           </form>
@@ -697,12 +697,12 @@ export default function DevicePage() {
       >
         <DialogContent className="sm:max-w-md border-none">
           <DialogHeader>
-            <DialogTitle>Add Brand</DialogTitle>
-            <DialogDescription>Create a new brand.</DialogDescription>
+            <DialogTitle>Thêm thương hiệu</DialogTitle>
+            <DialogDescription>Tạo thương hiệu mới.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateBrand} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="create-brand-name">Brand Name</Label>
+              <Label htmlFor="create-brand-name">Tên thương hiệu</Label>
               <Input
                 id="create-brand-name"
                 value={createBrandName}
@@ -728,12 +728,12 @@ export default function DevicePage() {
                 <div className="flex flex-col items-center gap-1 text-muted-foreground">
                   <Plus className="size-5" />
                   <span className="text-xs uppercase tracking-[0.12em]">
-                    Image
+                    Hình ảnh
                   </span>
                 </div>
               </label>
               <p className="text-xs text-muted-foreground">
-                Supports PNG, JPG, JPEG, WEBP, GIF.
+                Hỗ trợ PNG, JPG, JPEG, WEBP, GIF.
               </p>
               {createBrandImageFile && (
                 <p className="text-xs text-muted-foreground truncate">
@@ -743,7 +743,7 @@ export default function DevicePage() {
               {createBrandImagePreview && (
                 <img
                   src={createBrandImagePreview}
-                  alt="Brand logo preview"
+                  alt="Xem trước logo thương hiệu"
                   className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               )}
@@ -751,10 +751,10 @@ export default function DevicePage() {
             {createBrandError && <p className="text-sm text-destructive">{createBrandError}</p>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateBrandOpen(false)}>
-                Cancel
+                Hủy
               </Button>
               <Button type="submit" disabled={createBrandLoading}>
-                {createBrandLoading ? "Creating..." : "Create"}
+                {createBrandLoading ? "Đang tạo..." : "Tạo"}
               </Button>
             </DialogFooter>
           </form>
@@ -775,12 +775,12 @@ export default function DevicePage() {
       >
         <DialogContent className="sm:max-w-md border-none">
           <DialogHeader>
-            <DialogTitle>Edit Brand</DialogTitle>
-            <DialogDescription>Update brand info.</DialogDescription>
+            <DialogTitle>Sửa thương hiệu</DialogTitle>
+            <DialogDescription>Cập nhật thông tin thương hiệu.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditBrand} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-brand-name">Brand Name</Label>
+              <Label htmlFor="edit-brand-name">Tên thương hiệu</Label>
               <Input
                 id="edit-brand-name"
                 value={editBrandName}
@@ -806,12 +806,12 @@ export default function DevicePage() {
                 <div className="flex flex-col items-center gap-1 text-muted-foreground">
                   <Plus className="size-5" />
                   <span className="text-xs uppercase tracking-[0.12em]">
-                    Image
+                    Hình ảnh
                   </span>
                 </div>
               </label>
               <p className="text-xs text-muted-foreground">
-                Supports PNG, JPG, JPEG, WEBP, GIF.
+                Hỗ trợ PNG, JPG, JPEG, WEBP, GIF.
               </p>
               {editBrandImageFile && (
                 <p className="text-xs text-muted-foreground truncate">
@@ -821,7 +821,7 @@ export default function DevicePage() {
               {editBrandImagePreview ? (
                 <img
                   src={editBrandImagePreview}
-                  alt="Updated brand logo preview"
+                  alt="Xem trước logo thương hiệu đã cập nhật"
                   className="h-16 w-16 rounded-md object-contain bg-white p-1 border border-border/60"
                 />
               ) : editingBrand?.logo ? (
@@ -839,10 +839,10 @@ export default function DevicePage() {
             {editBrandError && <p className="text-sm text-destructive">{editBrandError}</p>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditBrandOpen(false)}>
-                Cancel
+                Hủy
               </Button>
               <Button type="submit" disabled={editBrandLoading}>
-                {editBrandLoading ? "Saving..." : "Save"}
+                {editBrandLoading ? "Đang lưu..." : "Lưu"}
               </Button>
             </DialogFooter>
           </form>
@@ -854,8 +854,8 @@ export default function DevicePage() {
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
-        title={deleteTarget ? `Delete model "${deleteTarget.name}"?` : "Delete this model?"}
-        confirmText="Delete"
+        title={deleteTarget ? `Xóa model "${deleteTarget.name}"?` : "Xóa model này?"}
+        confirmText="Xóa"
         loading={Boolean(deleteTarget && deleteModelMutation.isPending && deletingId === deleteTarget.id)}
         onConfirm={async () => {
           if (!deleteTarget) return;
@@ -871,10 +871,10 @@ export default function DevicePage() {
         }}
         title={
           deleteBrandTarget
-            ? `Delete brand "${deleteBrandTarget.name}"?`
-            : "Delete this brand?"
+            ? `Xóa thương hiệu "${deleteBrandTarget.name}"?`
+            : "Xóa thương hiệu này?"
         }
-        confirmText="Delete"
+        confirmText="Xóa"
         loading={Boolean(
           deleteBrandTarget &&
           deleteBrandMutation.isPending &&

@@ -34,7 +34,9 @@
       "WebFetch(domain:thuvienphapluat.vn)",
       "WebFetch(domain:sme.misa.vn)",
       "WebFetch(domain:ketoanthuanthien.vn)",
-      "Bash(rtk wc *)"
+      "Bash(rtk wc *)",
+      "Bash(rtk du *)",
+      "Bash(sort -t: -k2 -rn)"
     ]
   }
 }

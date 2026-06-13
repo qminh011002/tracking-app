@@ -216,7 +216,7 @@ export default function WarrantyCheckingPage() {
   return (
     <DashboardPageLayout
       header={{
-        title: "Warranty Checking",
+        title: "Kiểm tra bảo hành",
         description: "Tra cứu bảo hành Sony",
         icon: GearIcon,
       }}

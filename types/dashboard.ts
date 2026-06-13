@@ -49,6 +49,22 @@ export interface Notification {
   priority: "low" | "medium" | "high";
 }
 
+export interface Mission {
+  id: string;
+  /** Mã sản phẩm cần bán, vd "WH-1000XM6" */
+  productModel: string;
+  /** Số lượng cần bán để hoàn thành nhiệm vụ */
+  target: number;
+  /** Số lượng đã bán hiện tại */
+  current: number;
+  /** Mô tả phần thưởng, vd "Thưởng 2.000.000đ" */
+  reward: string;
+  rewardType: "gift" | "cash" | "voucher";
+  status: "active" | "completed" | "claimed";
+  /** Hạn hoàn thành (ISO date), tùy chọn */
+  deadline?: string;
+}
+
 export interface WidgetData {
   location: string;
   timezone: string;
@@ -63,6 +79,7 @@ export interface MockData {
   rebelsRanking: RebelRanking[];
   securityStatus: SecurityStatus[];
   notifications: Notification[];
+  missions: Mission[];
   widgetData: WidgetData;
 }
 

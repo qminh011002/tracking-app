@@ -105,7 +105,7 @@ function normalizePhone(phone: string) {
 function validatePhone(phone: string) {
   const clean = normalizePhone(phone);
   if (!clean) return null;
-  if (clean.length !== 10) return "Phone must be exactly 10 digits";
+  if (clean.length !== 10) return "Số điện thoại phải có đúng 10 chữ số";
   return null;
 }
 
@@ -301,7 +301,7 @@ export function InventoryDetailDialog({
 
   const handleDelete = async () => {
     if (!storeId) {
-      setDeleteError("Missing store ID");
+      setDeleteError("Thiếu mã cửa hàng");
       return;
     }
     setDeleteError(null);
@@ -309,20 +309,20 @@ export function InventoryDetailDialog({
       await deleteInventoryMutation.mutateAsync({ storeId, id: item.id });
       setDeleteConfirmOpen(false);
       toast({
-        title: "Inventory deleted",
-        description: `"${item.title}" has been removed.`,
+        title: "Đã xóa kho hàng",
+        description: `Đã xóa "${item.title}".`,
       });
       onOpenChange(false);
       onDeleted?.();
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to delete inventory";
+        error instanceof Error ? error.message : "Xóa kho hàng thất bại";
       setDeleteError(
         message,
       );
       toast({
         variant: "destructive",
-        title: "Delete failed",
+        title: "Xóa thất bại",
         description: message,
       });
     }
@@ -331,21 +331,21 @@ export function InventoryDetailDialog({
   const handleSave = async () => {
     if (!item || !form) return;
     if (!storeId) {
-      setEditError("Missing store ID");
+      setEditError("Thiếu mã cửa hàng");
       return;
     }
     if (!item.buyInfo.transactionId) {
-      setEditError("Missing BUY transaction ID");
+      setEditError("Thiếu mã giao dịch MUA");
       return;
     }
 
     const buyAmount = Number(form.buy.amount);
     if (!Number.isFinite(buyAmount) || buyAmount < 0) {
-      setEditError("Buy amount must be a valid non-negative number");
+      setEditError("Giá mua phải là số hợp lệ và không âm");
       return;
     }
     if (!form.buy.date) {
-      setEditError("Buy date is required");
+      setEditError("Ngày mua là bắt buộc");
       return;
     }
     const buyPhoneError = validatePhone(form.buy.phone);
@@ -357,11 +357,11 @@ export function InventoryDetailDialog({
     if (item.sellInfo.transactionId) {
       const sellAmount = Number(form.sell.amount);
       if (!Number.isFinite(sellAmount) || sellAmount < 0) {
-        setEditError("Sell amount must be a valid non-negative number");
+        setEditError("Giá bán phải là số hợp lệ và không âm");
         return;
       }
       if (!form.sell.date) {
-        setEditError("Sell date is required");
+        setEditError("Ngày bán là bắt buộc");
         return;
       }
       const sellPhoneError = validatePhone(form.sell.phone);
@@ -414,22 +414,22 @@ export function InventoryDetailDialog({
       }
 
       toast({
-        title: "Inventory updated",
+        title: "Đã cập nhật kho hàng",
         description:
           allPendingImages.length > 0
-            ? `BUY/SELL information saved and ${allPendingImages.length} image(s) uploaded.`
-            : "BUY/SELL information has been saved.",
+            ? `Đã lưu thông tin MUA/BÁN và tải lên ${allPendingImages.length} ảnh.`
+            : "Đã lưu thông tin MUA/BÁN.",
       });
       setIsEditing(false);
       setPendingBuyImages([]);
       setPendingSellImages([]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to update inventory";
+        error instanceof Error ? error.message : "Cập nhật kho hàng thất bại";
       setEditError(message);
       toast({
         variant: "destructive",
-        title: "Update failed",
+        title: "Cập nhật thất bại",
         description: message,
       });
     }
@@ -437,7 +437,7 @@ export function InventoryDetailDialog({
 
   const handleDeleteImage = async (image: { id?: string; url: string }) => {
     if (!storeId) {
-      setEditError("Missing store ID");
+      setEditError("Thiếu mã cửa hàng");
       return;
     }
     setDeletingImageId(image.id ?? image.url);
@@ -450,16 +450,16 @@ export function InventoryDetailDialog({
         imageUrl: image.url,
       });
       toast({
-        title: "Image deleted",
-        description: "Saved image has been removed.",
+        title: "Đã xóa ảnh",
+        description: "Đã xóa ảnh đã lưu.",
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to delete image";
+        error instanceof Error ? error.message : "Xóa ảnh thất bại";
       setEditError(message);
       toast({
         variant: "destructive",
-        title: "Delete image failed",
+        title: "Xóa ảnh thất bại",
         description: message,
       });
     } finally {
@@ -478,16 +478,16 @@ export function InventoryDetailDialog({
         status: nextStatus,
       });
       toast({
-        title: "Status updated",
-        description: `Device marked as ${nextStatus === "sold" ? "Sold" : "In stock"}.`,
+        title: "Đã cập nhật trạng thái",
+        description: `Thiết bị được đánh dấu là ${nextStatus === "sold" ? "Đã bán" : "Còn hàng"}.`,
       });
     } catch (error) {
       setStatusValue(item.status);
       const message =
-        error instanceof Error ? error.message : "Failed to update status";
+        error instanceof Error ? error.message : "Cập nhật trạng thái thất bại";
       toast({
         variant: "destructive",
-        title: "Update status failed",
+        title: "Cập nhật trạng thái thất bại",
         description: message,
       });
     }
@@ -537,8 +537,8 @@ export function InventoryDetailDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="in_stock">In stock</SelectItem>
-                <SelectItem value="sold">Sold</SelectItem>
+                <SelectItem value="in_stock">Còn hàng</SelectItem>
+                <SelectItem value="sold">Đã bán</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -551,19 +551,19 @@ export function InventoryDetailDialog({
         <div className="grid grid-cols-1 divide-y rounded-xl bg-muted/40 md:grid-cols-3 md:divide-x md:divide-y-0">
           <div className="space-y-1 p-4">
             <div className="text-xs font-medium text-muted-foreground">
-              Purchase price
+              Giá mua
             </div>
             <div className="whitespace-nowrap text-lg font-semibold tabular-nums tracking-tight text-foreground">
               {formatMoney(item.buyInfo.amount)}
             </div>
             <div className="truncate text-xs text-muted-foreground">
-              from {item.buyInfo.name}
+              từ {item.buyInfo.name}
             </div>
           </div>
 
           <div className="space-y-1 p-4">
             <div className="text-xs font-medium text-muted-foreground">
-              Sale price
+              Giá bán
             </div>
             <div
               className={cn(
@@ -576,13 +576,13 @@ export function InventoryDetailDialog({
               {formatMoney(item.sellInfo.amount)}
             </div>
             <div className="truncate text-xs text-muted-foreground">
-              {item.sellInfo.amount === null ? "Awaiting sale" : `to ${item.sellInfo.name}`}
+              {item.sellInfo.amount === null ? "Chờ bán" : `đến ${item.sellInfo.name}`}
             </div>
           </div>
 
           <div className="space-y-1 p-4">
             <div className="text-xs font-medium text-muted-foreground">
-              Net profit
+              Lợi nhuận ròng
             </div>
             <div className="flex items-center gap-2">
               <span
@@ -614,7 +614,7 @@ export function InventoryDetailDialog({
               )}
             </div>
             <div className="text-xs text-muted-foreground">
-              {profit === null ? "Pending" : profit >= 0 ? "Profit" : "Loss"}
+              {profit === null ? "Đang chờ" : profit >= 0 ? "Lợi nhuận" : "Lỗ"}
             </div>
           </div>
         </div>
@@ -623,12 +623,12 @@ export function InventoryDetailDialog({
         {isEditing && form ? (
           <div className="space-y-4 pt-2">
             <h3 className="text-sm font-medium text-foreground">
-              Update information
+              Cập nhật thông tin
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3 rounded-xl bg-muted/40 p-4">
                 <span className="text-sm font-medium text-foreground">
-                  Purchase
+                  Nhập hàng
                 </span>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Amount (VND)" htmlFor="buy-edit-amount">

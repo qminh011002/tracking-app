@@ -39,7 +39,7 @@ function toDialogItem(item: InventoryItem) {
     sellInfo: {
       transactionId: item.sell?.id,
       amount: item.sell?.sell_price ?? null,
-      name: item.sell?.snapshot_name ?? "Pending",
+      name: item.sell?.snapshot_name ?? "Chờ xử lý",
       phone: item.sell?.snapshot_phone ?? "-",
       provinceId: item.sell?.snapshot_province_id ?? null,
       province: item.sell?.snapshot_province_name ?? "-",
@@ -76,7 +76,7 @@ export default function InventoryDetailPage() {
   return (
     <DashboardPageLayout
       header={{
-        title: "Inventory Detail",
+        title: "Chi tiết kho hàng",
         description: id.toUpperCase(),
         icon: ProcessorIcon,
       }}
@@ -89,18 +89,18 @@ export default function InventoryDetailPage() {
           onClick={() => navigate("/inventory")}
         >
           <ArrowLeft className="size-4" />
-          Back to inventory
+          Quay lại kho hàng
         </Button>
 
         {loading && (
           <div className="rounded-lg border border-border/60 bg-card px-4 py-8 text-center text-sm text-muted-foreground uppercase">
-            Loading inventory detail...
+            Đang tải chi tiết kho hàng...
           </div>
         )}
 
         {error && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-4 text-sm text-destructive">
-            {error instanceof Error ? error.message : "Failed to load inventory"}
+            {error instanceof Error ? error.message : "Không thể tải kho hàng"}
           </div>
         )}
 

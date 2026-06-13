@@ -106,7 +106,7 @@ function toCardItem(item: SupabaseInventoryItem): InventoryCardItem {
     sellInfo: {
       transactionId: item.sell?.id,
       amount: item.sell?.sell_price ?? null,
-      name: item.sell?.snapshot_name ?? "Pending",
+      name: item.sell?.snapshot_name ?? "Chờ xử lý",
       phone: item.sell?.snapshot_phone ?? "-",
       provinceId: item.sell?.snapshot_province_id ?? null,
       province: item.sell?.snapshot_province_name ?? "-",
@@ -277,15 +277,15 @@ export default function InventoryPage() {
 
     if (succeeded > 0) {
       toast({
-        title: "Inventory deleted",
-        description: `${succeeded} item${succeeded === 1 ? "" : "s"} removed.`,
+        title: "Đã xóa kho hàng",
+        description: `Đã xóa ${succeeded} mục.`,
       });
     }
     if (failed > 0) {
       toast({
         variant: "destructive",
-        title: "Some deletions failed",
-        description: `${failed} item${failed === 1 ? "" : "s"} could not be deleted.`,
+        title: "Một số mục xóa thất bại",
+        description: `Không thể xóa ${failed} mục.`,
       });
     }
 
@@ -296,7 +296,7 @@ export default function InventoryPage() {
   return (
     <DashboardPageLayout
       header={{
-        title: "Inventory",
+        title: "Kho hàng",
         icon: ProcessorIcon,
         actions: (
           <InventoryActions storeId={storeId} onCreated={() => undefined} />
@@ -319,7 +319,7 @@ export default function InventoryPage() {
               <Input
                 value={queryInput}
                 onChange={(event) => setQueryInput(event.target.value)}
-                placeholder="Search model, IMEI, contact..."
+                placeholder="Tìm model, IMEI, liên hệ..."
                 className="pl-9"
               />
             </div>
@@ -331,9 +331,9 @@ export default function InventoryPage() {
               onValueChange={(value) => setFilter(value as InventoryFilter)}
             >
               <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="in_stock">In stock</TabsTrigger>
-                <TabsTrigger value="sold">Sold</TabsTrigger>
+                <TabsTrigger value="all">Tất cả</TabsTrigger>
+                <TabsTrigger value="in_stock">Còn hàng</TabsTrigger>
+                <TabsTrigger value="sold">Đã bán</TabsTrigger>
               </TabsList>
             </Tabs>
             <Select
@@ -341,14 +341,14 @@ export default function InventoryPage() {
               onValueChange={(value) => setSortBy(value as InventorySortBy)}
             >
               <SelectTrigger className="w-42.5">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder="Sắp xếp theo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created_desc">Created</SelectItem>
-                <SelectItem value="buy_date_desc">Buy date</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="in_stock_first">In stock</SelectItem>
-                <SelectItem value="stock_age_desc">Longest stock</SelectItem>
+                <SelectItem value="created_desc">Ngày tạo</SelectItem>
+                <SelectItem value="buy_date_desc">Ngày mua</SelectItem>
+                <SelectItem value="name">Tên</SelectItem>
+                <SelectItem value="in_stock_first">Còn hàng</SelectItem>
+                <SelectItem value="stock_age_desc">Tồn kho lâu nhất</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -378,12 +378,12 @@ export default function InventoryPage() {
               <Checkbox
                 checked={allPageSelected}
                 onCheckedChange={toggleSelectAllOnPage}
-                aria-label="Select all on this page"
+                aria-label="Chọn tất cả trên trang này"
               />
               <span className="text-sm text-muted-foreground">
                 {selectedIds.size > 0
-                  ? `${selectedIds.size} selected`
-                  : "Select items to delete"}
+                  ? `Đã chọn ${selectedIds.size}`
+                  : "Chọn mục để xóa"}
               </span>
             </div>
             <Button
@@ -397,12 +397,12 @@ export default function InventoryPage() {
               ) : (
                 <Trash2 className="size-4" />
               )}
-              Delete{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+              Xóa{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
             </Button>
           </div>
         ) : (
           <div className="text-sm text-muted-foreground">
-            {totalItems} {totalItems === 1 ? "item" : "items"}
+            {totalItems} mục
           </div>
         )}
 
@@ -412,10 +412,10 @@ export default function InventoryPage() {
               <EmptyMedia variant="icon">
                 <TriangleAlert />
               </EmptyMedia>
-              <EmptyTitle>Missing store ID</EmptyTitle>
+              <EmptyTitle>Thiếu mã cửa hàng</EmptyTitle>
               <EmptyDescription>
-                Your account has no store ID. Please sign up again with a store
-                ID or update your user metadata.
+                Tài khoản của bạn không có mã cửa hàng. Vui lòng đăng ký lại với
+                mã cửa hàng hoặc cập nhật thông tin người dùng.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -425,7 +425,7 @@ export default function InventoryPage() {
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error instanceof Error
               ? error.message
-              : "Failed to load inventory"}
+              : "Không thể tải kho hàng"}
           </div>
         )}
 
@@ -471,7 +471,7 @@ export default function InventoryPage() {
                         checked={isSelected}
                         onCheckedChange={() => toggleSelect(item.id)}
                         onClick={(event) => event.stopPropagation()}
-                        aria-label={`Select ${item.title}`}
+                        aria-label={`Chọn ${item.title}`}
                         className="size-5 border-2 bg-background shadow-sm data-[state=checked]:border-primary"
                       />
                     </div>
@@ -487,10 +487,10 @@ export default function InventoryPage() {
               <EmptyMedia variant="icon">
                 <PackageSearch />
               </EmptyMedia>
-              <EmptyTitle>No results</EmptyTitle>
+              <EmptyTitle>Không có kết quả</EmptyTitle>
               <EmptyDescription>
-                No inventory matched your search or filters. Try adjusting
-                them.
+                Không có kho hàng nào khớp với tìm kiếm hoặc bộ lọc của bạn. Hãy
+                thử điều chỉnh lại.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -518,17 +518,16 @@ export default function InventoryPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {selectedIds.size} item
-              {selectedIds.size === 1 ? "" : "s"}?
+              Xóa {selectedIds.size} mục?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the selected inventory along with their
-              buy and sell transactions. This action cannot be undone.
+              Thao tác này sẽ xóa vĩnh viễn kho hàng đã chọn cùng với các giao
+              dịch mua và bán của chúng. Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBulkDeleting}>
-              Cancel
+              Hủy
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={(event) => {
@@ -543,7 +542,7 @@ export default function InventoryPage() {
               ) : (
                 <Trash2 className="size-4" />
               )}
-              Delete
+              Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

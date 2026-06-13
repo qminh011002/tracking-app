@@ -21,7 +21,7 @@ import { CHART_COLORS } from "./format";
 import InfoHint from "./info-hint";
 
 const histConfig = {
-  count: { label: "Orders", color: "var(--chart-3)" },
+  count: { label: "Đơn hàng", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
 export default function CustomerAnalytics({
@@ -32,13 +32,13 @@ export default function CustomerAnalytics({
   if (!data) {
     return (
       <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
-        Loading data...
+        Đang tải dữ liệu...
       </div>
     );
   }
 
   const pieData = data.newVsReturning.map((d) => ({
-    name: d.type === "new" ? "New customers" : "Returning customers",
+    name: d.type === "new" ? "Khách hàng mới" : "Khách hàng quay lại",
     value: d.count,
     fill: d.type === "new" ? CHART_COLORS[0] : CHART_COLORS[1],
   }));
@@ -52,8 +52,8 @@ export default function CustomerAnalytics({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* New vs Returning */}
         <DashboardCard
-          title="NEW VS RETURNING CUSTOMERS"
-          addon={<InfoHint text="Shows customer mix between first-time buyers and repeat buyers." />}
+          title="KHÁCH HÀNG MỚI VS QUAY LẠI"
+          addon={<InfoHint text="Hiển thị tỷ lệ giữa khách mua lần đầu và khách mua lặp lại." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-64">
@@ -68,7 +68,7 @@ export default function CustomerAnalytics({
                       return (
                         <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
                           <div className="font-medium">{d.name}</div>
-                          <div className="text-muted-foreground">{Number(d.value)} customers ({pct}%)</div>
+                          <div className="text-muted-foreground">{Number(d.value)} khách hàng ({pct}%)</div>
                         </div>
                       );
                     }}
@@ -105,8 +105,8 @@ export default function CustomerAnalytics({
 
         {/* Order Value Distribution */}
         <DashboardCard
-          title="ORDER VALUE DISTRIBUTION"
-          addon={<InfoHint text="Histogram of order values to reveal common spending ranges." />}
+          title="PHÂN BỐ GIÁ TRỊ ĐƠN HÀNG"
+          addon={<InfoHint text="Biểu đồ phân bố giá trị đơn hàng để thấy các khoảng chi tiêu phổ biến." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-64">
@@ -124,7 +124,7 @@ export default function CustomerAnalytics({
                   <ChartTooltip
                     cursor={false}
                     content={
-                      <ChartTooltipContent indicator="dot" formatter={(value) => `${Number(value)} orders`} />
+                      <ChartTooltipContent indicator="dot" formatter={(value) => `${Number(value)} đơn hàng`} />
                     }
                   />
                   <Bar dataKey="count" fill="var(--color-count)" radius={4} />
@@ -136,15 +136,15 @@ export default function CustomerAnalytics({
 
         {/* Cohort Retention Table */}
         <DashboardCard
-          title="MONTHLY RETENTION COHORT"
-          addon={<InfoHint text="Rows are first purchase month cohorts, columns are follow-up months, values are retained customer rates." />}
+          title="NHÓM GIỮ CHÂN KHÁCH THEO THÁNG"
+          addon={<InfoHint text="Mỗi hàng là nhóm khách theo tháng mua đầu tiên, mỗi cột là các tháng tiếp theo, giá trị là tỷ lệ khách được giữ lại." />}
         >
           <div className="bg-accent rounded-lg overflow-auto max-h-72">
             {cohortMonths.length > 0 ? (
               <table className="w-full text-xs border-collapse">
                 <thead className="sticky top-0 bg-accent">
                   <tr>
-                    <th className="border-b border-border/60 p-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">Start month</th>
+                    <th className="border-b border-border/60 p-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">Tháng bắt đầu</th>
                     {allMonths.map((m) => (
                       <th key={m} className="border-b border-border/60 p-1.5 text-center font-medium text-muted-foreground">{m.slice(5)}</th>
                     ))}
@@ -187,7 +187,7 @@ export default function CustomerAnalytics({
               </table>
             ) : (
               <div className="text-center py-8 text-muted-foreground uppercase">
-                Not enough data to build cohorts
+                Không đủ dữ liệu để dựng nhóm khách
               </div>
             )}
           </div>

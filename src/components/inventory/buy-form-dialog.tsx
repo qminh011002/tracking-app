@@ -48,40 +48,40 @@ const isNotFutureDate = (value: string) => {
 };
 
 const buyFormSchema = z.object({
-  modelId: z.string().min(1, "Model is required"),
+  modelId: z.string().min(1, "Vui lòng chọn model"),
   note: z.string().optional(),
   sellerName: z.string().optional(),
   sellerPhone: z
     .string()
     .optional()
     .refine((value) => !value || /^\d{10}$/.test(value), {
-      message: "Seller phone must be exactly 10 digits",
+      message: "Số điện thoại người bán phải có đúng 10 chữ số",
     }),
-  sellerProvinceId: z.string().min(1, "Province is required"),
+  sellerProvinceId: z.string().min(1, "Vui lòng chọn tỉnh/thành"),
   sellerAddress: z.string().optional(),
   buyDate: z
     .string()
-    .min(1, "Buy date is required")
+    .min(1, "Vui lòng chọn ngày mua")
     .refine((value) => /^\d{4}-\d{2}-\d{2}$/.test(value), {
-      message: "Buy date must be in YYYY-MM-DD format",
+      message: "Ngày mua phải có định dạng YYYY-MM-DD",
     })
     .refine((value) => isValidDateValue(value), {
-      message: "Buy date is invalid",
+      message: "Ngày mua không hợp lệ",
     })
     .refine((value) => isNotFutureDate(value), {
-      message: "Buy date cannot be in the future",
+      message: "Ngày mua không thể là ngày trong tương lai",
     }),
   warrantyExpiryDate: z
     .string()
     .optional()
     .refine((value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value), {
-      message: "Warranty expiry must be in YYYY-MM-DD format",
+      message: "Ngày hết hạn bảo hành phải có định dạng YYYY-MM-DD",
     })
     .refine((value) => !value || isValidDateValue(value), {
-      message: "Warranty expiry date is invalid",
+      message: "Ngày hết hạn bảo hành không hợp lệ",
     }),
   buyPriceDigits: z.string().refine((value) => /^\d*$/.test(value), {
-    message: "Buy price is invalid",
+    message: "Giá mua không hợp lệ",
   }),
 });
 
@@ -196,11 +196,11 @@ export function BuyFormDialog({
     });
 
     if (!result.ok) {
-      setBuyError(result.error ?? "Failed to create BUY");
+      setBuyError(result.error ?? "Tạo phiếu MUA thất bại");
       toast({
         variant: "destructive",
-        title: "Create BUY failed",
-        description: result.error ?? "Failed to create BUY",
+        title: "Tạo phiếu MUA thất bại",
+        description: result.error ?? "Tạo phiếu MUA thất bại",
       });
       return;
     }
@@ -208,8 +208,8 @@ export function BuyFormDialog({
     closeDialogSafely();
     onCreated();
     toast({
-      title: "BUY created",
-      description: "Inventory has been added successfully.",
+      title: "Đã tạo phiếu MUA",
+      description: "Đã thêm vào kho hàng thành công.",
     });
   };
 
@@ -217,9 +217,9 @@ export function BuyFormDialog({
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-2xl border-none max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create BUY</DialogTitle>
+          <DialogTitle>Tạo phiếu MUA</DialogTitle>
           <DialogDescription>
-            Add buy transaction and set device to in stock.
+            Thêm giao dịch mua và đưa thiết bị vào trạng thái còn hàng.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -244,25 +244,25 @@ export function BuyFormDialog({
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label>Note (Optional)</Label>
+            <Label>Ghi chú (Tùy chọn)</Label>
             <Input
-              placeholder="e.g. IMEI / serial / short note"
+              placeholder="VD: IMEI / serial / ghi chú ngắn"
               {...register("note")}
             />
           </div>
           <div className="space-y-2">
-            <Label>Seller Name (Optional)</Label>
+            <Label>Tên người bán (Tùy chọn)</Label>
             <Input
-              placeholder="e.g. Nguyen Van A"
+              placeholder="VD: Nguyễn Văn A"
               {...register("sellerName")}
             />
           </div>
           <div className="space-y-2">
-            <Label>Seller Phone (Optional)</Label>
+            <Label>Số điện thoại người bán (Tùy chọn)</Label>
             <Input
               inputMode="numeric"
               maxLength={10}
-              placeholder="Optional - 10 digits, e.g. 0987654321"
+              placeholder="Tùy chọn - 10 chữ số, VD: 0987654321"
               {...register("sellerPhone")}
               onChange={(e) =>
                 setValue(
@@ -278,7 +278,7 @@ export function BuyFormDialog({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Seller Province *</Label>
+            <Label>Tỉnh/Thành người bán *</Label>
             <ProvinceCombobox
               value={watch("sellerProvinceId")}
               onChange={(next) =>
@@ -294,16 +294,16 @@ export function BuyFormDialog({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Seller Address Detail (Optional)</Label>
+            <Label>Địa chỉ chi tiết người bán (Tùy chọn)</Label>
             <Input
-              placeholder="e.g. 123 Nguyen Trai, District 1"
+              placeholder="VD: 123 Nguyễn Trãi, Quận 1"
               {...register("sellerAddress")}
             />
           </div>
           <div className="space-y-2">
-            <Label>Buy Price</Label>
+            <Label>Giá mua</Label>
             <MoneyInput
-              placeholder="e.g. 2.000.000"
+              placeholder="VD: 2.000.000"
               valueDigits={watch("buyPriceDigits")}
               onValueDigitsChange={(next) => setValue("buyPriceDigits", next)}
             />
@@ -314,7 +314,7 @@ export function BuyFormDialog({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Buy Date *</Label>
+            <Label>Ngày mua *</Label>
             <DatePicker
               value={watch("buyDate")}
               max={new Date().toISOString().slice(0, 10)}
@@ -331,7 +331,7 @@ export function BuyFormDialog({
 
           <div className="space-y-2 md:col-span-2">
             <div className="flex items-center justify-between gap-3">
-              <Label>Warranty Expiry (Optional)</Label>
+              <Label>Hết hạn bảo hành (Tùy chọn)</Label>
               {watch("warrantyExpiryDate") && (
                 <Button
                   type="button"
@@ -343,7 +343,7 @@ export function BuyFormDialog({
                     })
                   }
                 >
-                  Clear
+                  Xóa
                 </Button>
               )}
             </div>
@@ -351,7 +351,7 @@ export function BuyFormDialog({
               value={watch("warrantyExpiryDate")}
               min={new Date().toISOString().slice(0, 10)}
               max="2030-12-31"
-              placeholder="Select warranty expiry date"
+              placeholder="Chọn ngày hết hạn bảo hành"
               onChange={(value) =>
                 setValue("warrantyExpiryDate", value, {
                   shouldValidate: true,
@@ -366,7 +366,7 @@ export function BuyFormDialog({
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label>Images</Label>
+            <Label>Hình ảnh</Label>
             <input
               key={buyImageInputKey}
               id="buy-images-input"
@@ -384,7 +384,7 @@ export function BuyFormDialog({
                 >
                   <img
                     src={buyImagePreviews[index]}
-                    alt={`Buy preview ${index + 1}`}
+                    alt={`Ảnh xem trước ${index + 1}`}
                     className="size-full rounded-md object-cover border border-border/60"
                   />
                   <Button
@@ -395,7 +395,7 @@ export function BuyFormDialog({
                     onClick={() => removeBuyImage(index)}
                   >
                     <X className="size-3" />
-                    <span className="sr-only">Remove image</span>
+                    <span className="sr-only">Xóa hình ảnh</span>
                   </Button>
                 </div>
               ))}
@@ -407,7 +407,7 @@ export function BuyFormDialog({
                 <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
                   <Plus className="size-5" />
                   <span className="text-xs uppercase tracking-[0.12em]">
-                    Image
+                    Hình ảnh
                   </span>
                 </div>
               </label>
@@ -419,14 +419,14 @@ export function BuyFormDialog({
           )}
           <DialogFooter className="md:col-span-2">
             <Button type="button" variant="outline" onClick={closeDialogSafely}>
-              Cancel
+              Hủy
             </Button>
             <Button
               type="submit"
               className="bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={buyLoading}
             >
-              {buyLoading ? "Creating..." : "Create BUY"}
+              {buyLoading ? "Đang tạo..." : "Tạo phiếu MUA"}
             </Button>
           </DialogFooter>
         </form>

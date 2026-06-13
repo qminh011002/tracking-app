@@ -54,11 +54,11 @@ function DeadlineItem({ deadline }: { deadline: TaxDeadline }) {
         <div className="flex items-center gap-2 mt-1">
           <span className="text-xs font-display">{formatDate(deadline.dueDate)}</span>
           {status === "overdue" ? (
-            <Badge variant="destructive" className="text-[9px]">OVERDUE {Math.abs(days)} DAYS</Badge>
+            <Badge variant="destructive" className="text-[9px]">QUÁ HẠN {Math.abs(days)} NGÀY</Badge>
           ) : status === "upcoming" ? (
-            <Badge variant="outline-warning" className="text-[9px]">{days} DAYS LEFT</Badge>
+            <Badge variant="outline-warning" className="text-[9px]">CÒN {days} NGÀY</Badge>
           ) : (
-            <span className="text-[10px] text-muted-foreground">{days} days left</span>
+            <span className="text-[10px] text-muted-foreground">còn {days} ngày</span>
           )}
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function TaxCalendar() {
           <CardContent className="bg-accent pt-4">
             <div className="flex items-center gap-2">
               <Bullet variant="destructive" />
-              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Overdue</span>
+              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Quá hạn</span>
             </div>
             <div className="font-display text-3xl mt-1">{overdueCount}</div>
           </CardContent>
@@ -99,7 +99,7 @@ export default function TaxCalendar() {
           <CardContent className="bg-accent pt-4">
             <div className="flex items-center gap-2">
               <Bullet variant="warning" />
-              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Due soon</span>
+              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Sắp đến hạn</span>
             </div>
             <div className="font-display text-3xl mt-1">{upcomingCount}</div>
           </CardContent>
@@ -108,7 +108,7 @@ export default function TaxCalendar() {
           <CardContent className="bg-accent pt-4">
             <div className="flex items-center gap-2">
               <Bullet variant="success" />
-              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Total deadlines</span>
+              <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Tổng số hạn chót</span>
             </div>
             <div className="font-display text-3xl mt-1">{deadlines.length}</div>
           </CardContent>
@@ -118,8 +118,8 @@ export default function TaxCalendar() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Timeline by Quarter */}
         <DashboardCard
-          title="2026 TAX CALENDAR"
-          addon={<InfoHint text="Quarter-based filing timeline with deadline status (overdue, upcoming, on track)." />}
+          title="LỊCH THUẾ 2026"
+          addon={<InfoHint text="Lịch nộp theo quý kèm trạng thái hạn chót (quá hạn, sắp đến hạn, đúng tiến độ)." />}
         >
           <div className="space-y-5">
             {[1, 2, 3, 4].map((q) => (
@@ -127,7 +127,7 @@ export default function TaxCalendar() {
                 <div className="flex items-center gap-2 mb-2">
                   <Bullet />
                   <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    Quarter {q}/2026
+                    Quý {q}/2026
                   </span>
                 </div>
                 <div className="bg-accent rounded-lg px-3">
@@ -142,9 +142,9 @@ export default function TaxCalendar() {
 
         {/* Compliance Checklist */}
         <DashboardCard
-          title="COMPLIANCE CHECKLIST"
+          title="DANH SÁCH KIỂM TRA TUÂN THỦ"
           intent="success"
-          addon={<InfoHint text="Operational checklist to keep tax compliance tasks visible and trackable." />}
+          addon={<InfoHint text="Danh sách kiểm tra vận hành giúp theo dõi và hiển thị các công việc tuân thủ thuế." />}
         >
           <div className="space-y-1">
             {checklist.map((item) => (
@@ -154,7 +154,7 @@ export default function TaxCalendar() {
                   <label htmlFor={item.id} className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
                     {item.title}
                     {item.required && (
-                      <Badge variant="destructive" className="text-[9px] px-1 uppercase">Required</Badge>
+                      <Badge variant="destructive" className="text-[9px] px-1 uppercase">Bắt buộc</Badge>
                     )}
                   </label>
                   <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>

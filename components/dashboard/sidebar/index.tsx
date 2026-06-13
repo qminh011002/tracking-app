@@ -42,31 +42,31 @@ import { useAuthSession } from "@/src/hooks/use-auth-session";
 const data = {
   navMain: [
     {
-      title: "Tools",
+      title: "Công cụ",
       items: [
         {
-          title: "Analytic",
+          title: "Phân tích",
           url: "/analytic",
           icon: ChartArea,
           isActive: true,
           locked: false,
         },
         {
-          title: "Inventory",
+          title: "Kho hàng",
           url: "/inventory",
           icon: AtomIcon,
           isActive: false,
           locked: false,
         },
         {
-          title: "Devices",
+          title: "Thiết bị",
           url: "/device",
           icon: ProcessorIcon,
           isActive: false,
           locked: false,
         },
         {
-          title: "Warranty Checking",
+          title: "Kiểm tra bảo hành",
           url: "/warranty-checking",
           icon: GearIcon,
           isActive: false,
@@ -76,7 +76,7 @@ const data = {
     },
   ],
   desktop: {
-    title: "Desktop (Online)",
+    title: "Máy tính (Trực tuyến)",
     status: "online",
   },
   user: {
@@ -108,8 +108,8 @@ export function DashboardSidebar({
           <MonkeyIcon className="size-10 group-hover:scale-[1.7] origin-top-left transition-transform group-data-[collapsible=icon]:size-6 group-data-[collapsible=icon]:group-hover:scale-100" />
         </div>
         <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-          <span className="text-2xl font-display">Inventory</span>
-          <span className="text-xs uppercase">Store Management</span>
+          <span className="text-2xl font-display">Kho hàng</span>
+          <span className="text-xs uppercase">Quản lý cửa hàng</span>
         </div>
       </SidebarHeader>
 
@@ -176,7 +176,7 @@ export function DashboardSidebar({
         <SidebarGroup>
           <SidebarGroupLabel>
             <Bullet className="mr-2" />
-            User
+            Người dùng
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -216,7 +216,7 @@ export function DashboardSidebar({
                         }}
                       >
                         <LogOut className="mr-2 h-4 w-4" />
-                        Sign out
+                        Đăng xuất
                       </button>
                     </div>
                   </PopoverContent>

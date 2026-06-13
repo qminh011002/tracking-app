@@ -156,12 +156,12 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
   }));
 
   const trendConfig: ChartConfig = {
-    revenue: { label: "Revenue", color: "var(--chart-1)" },
-    profit: { label: "Profit", color: "var(--chart-2)" },
+    revenue: { label: "Doanh thu", color: "var(--chart-1)" },
+    profit: { label: "Lợi nhuận", color: "var(--chart-2)" },
   };
 
   const productConfig: ChartConfig = {
-    revenue: { label: "Revenue", color: "var(--chart-1)" },
+    revenue: { label: "Doanh thu", color: "var(--chart-1)" },
   };
 
   const categoryConfig: ChartConfig = {};
@@ -175,7 +175,7 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
   if (!data) {
     return (
       <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
-        Loading data...
+        Đang tải dữ liệu...
       </div>
     );
   }
@@ -185,65 +185,65 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
       {/* Primary KPIs — revenue, profit and margin lead the view. */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <DashboardStat
-          label="TOTAL REVENUE"
+          label="TỔNG DOANH THU"
           value={String(Math.round(safeData.totalRevenue))}
           odometerValue={Math.round(safeData.totalRevenue)}
           unitLabel="VND"
-          description={`vs prev ${revenueGrowth >= 0 ? "+" : ""}${revenueGrowth.toFixed(1)}% (${formatVnd(safeData.prevPeriodRevenue)})`}
+          description={`so với kỳ trước ${revenueGrowth >= 0 ? "+" : ""}${revenueGrowth.toFixed(1)}% (${formatVnd(safeData.prevPeriodRevenue)})`}
           icon={GearIcon}
           intent={revenueGrowth >= 0 ? "positive" : "negative"}
           direction={revenueGrowth >= 0 ? "up" : "down"}
         />
 
         <DashboardStat
-          label="GROSS PROFIT"
+          label="LỢI NHUẬN GỘP"
           value={String(Math.round(safeData.totalProfit))}
           odometerValue={Math.round(safeData.totalProfit)}
           unitLabel="VND"
-          description={`vs prev ${profitGrowth >= 0 ? "+" : ""}${profitGrowth.toFixed(1)}% (${formatVnd(prevProfit)})`}
+          description={`so với kỳ trước ${profitGrowth >= 0 ? "+" : ""}${profitGrowth.toFixed(1)}% (${formatVnd(prevProfit)})`}
           icon={BoomIcon}
           intent={safeData.totalProfit >= 0 ? "positive" : "negative"}
           direction={safeData.totalProfit >= 0 ? "up" : "down"}
         />
 
         <DashboardStat
-          label="GROSS MARGIN"
+          label="BIÊN LỢI NHUẬN GỘP"
           value={marginPct.toFixed(1)}
           odometerValue={Number(marginPct.toFixed(1))}
           odometerFormat="(,ddd).d"
           unitLabel="%"
-          description={`${marginDelta >= 0 ? "+" : ""}${marginDelta.toFixed(1)} pts vs prev`}
+          description={`${marginDelta >= 0 ? "+" : ""}${marginDelta.toFixed(1)} điểm so với kỳ trước`}
           icon={ProcessorIcon}
           intent={marginDelta >= 0 ? "positive" : "negative"}
           direction={marginDelta >= 0 ? "up" : "down"}
         />
 
         <DashboardStat
-          label="ORDERS"
+          label="ĐƠN HÀNG"
           value={String(safeData.totalOrders)}
           odometerValue={safeData.totalOrders}
-          description={`Avg ${avgOrderPerDay.toFixed(1)}/day | vs prev ${orderGrowth >= 0 ? "+" : ""}${orderGrowth.toFixed(0)}%`}
+          description={`TB ${avgOrderPerDay.toFixed(1)}/ngày | so với kỳ trước ${orderGrowth >= 0 ? "+" : ""}${orderGrowth.toFixed(0)}%`}
           icon={ProcessorIcon}
           intent={orderGrowth >= 0 ? "positive" : "negative"}
           direction={orderGrowth >= 0 ? "up" : "down"}
         />
 
         <DashboardStat
-          label="AVG ORDER VALUE"
+          label="GIÁ TRỊ ĐƠN TB"
           value={String(Math.round(safeData.avgOrderValue))}
           odometerValue={Math.round(safeData.avgOrderValue)}
           unitLabel="VND"
-          description="Revenue per order"
+          description="Doanh thu mỗi đơn"
           icon={GearIcon}
           intent="neutral"
         />
 
         <DashboardStat
-          label="AVG PROFIT / ORDER"
+          label="LỢI NHUẬN TB / ĐƠN"
           value={String(Math.round(avgProfitPerOrder))}
           odometerValue={Math.round(avgProfitPerOrder)}
           unitLabel="VND"
-          description={`Total cost ${formatVnd(safeData.totalCost)}`}
+          description={`Tổng giá vốn ${formatVnd(safeData.totalCost)}`}
           icon={BoomIcon}
           intent="neutral"
         />
@@ -251,23 +251,23 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
 
       {/* Hero: revenue (bars) vs profit (line) over time. */}
       <DashboardCard
-        title="REVENUE & PROFIT OVER TIME"
+        title="DOANH THU & LỢI NHUẬN THEO THỜI GIAN"
         addon={
           <div className="flex items-center gap-2">
-            <InfoHint text="Bars show revenue, the line shows gross profit per period. Toggle the grain to compare day, week and month momentum." />
+            <InfoHint text="Cột thể hiện doanh thu, đường thể hiện lợi nhuận gộp mỗi kỳ. Chuyển đổi mức chi tiết để so sánh xu hướng theo ngày, tuần và tháng." />
             <Tabs value={granularity} onValueChange={(v) => setGranularity(v as Granularity)}>
               <TabsList>
-                <TabsTrigger value="daily">Daily</TabsTrigger>
-                <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                <TabsTrigger value="daily">Theo ngày</TabsTrigger>
+                <TabsTrigger value="weekly">Theo tuần</TabsTrigger>
+                <TabsTrigger value="monthly">Theo tháng</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         }
       >
         <div className="flex items-center gap-5 mb-3 flex-wrap">
-          <ChartLegend label="Revenue" color="var(--chart-1)" />
-          <ChartLegend label="Profit" color="var(--chart-2)" />
+          <ChartLegend label="Doanh thu" color="var(--chart-1)" />
+          <ChartLegend label="Lợi nhuận" color="var(--chart-2)" />
         </div>
         <div className="bg-accent rounded-lg p-3 w-full">
           <div className="w-full h-80">
@@ -308,8 +308,8 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
       {/* At-a-glance breakdowns: channel mix + top products. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardCard
-          title="REVENUE BY CHANNEL"
-          addon={<InfoHint text="Share of revenue per sales channel so you can see where demand concentrates." />}
+          title="DOANH THU THEO KÊNH"
+          addon={<InfoHint text="Tỷ trọng doanh thu theo từng kênh bán hàng để bạn thấy nhu cầu tập trung ở đâu." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-72">
@@ -328,7 +328,7 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
                         <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
                           <div className="font-medium">{row.name}</div>
                           <div className="text-muted-foreground">{formatVndFull(Number(row.value))} ({pct}%)</div>
-                          <div className="text-muted-foreground">{row.orders} orders</div>
+                          <div className="text-muted-foreground">{row.orders} đơn hàng</div>
                         </div>
                       );
                     }}
@@ -362,8 +362,8 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
         </DashboardCard>
 
         <DashboardCard
-          title="TOP PRODUCTS BY REVENUE"
-          addon={<InfoHint text="The six SKUs generating the most revenue in the selected period." />}
+          title="SẢN PHẨM HÀNG ĐẦU THEO DOANH THU"
+          addon={<InfoHint text="Sáu SKU tạo ra doanh thu cao nhất trong kỳ đã chọn." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-72">
@@ -396,7 +396,7 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
                         <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
                           <div className="font-medium">{row.model}</div>
                           <div className="text-muted-foreground">{formatVndFull(row.revenue)}</div>
-                          <div className="text-muted-foreground">{row.orders} orders</div>
+                          <div className="text-muted-foreground">{row.orders} đơn hàng</div>
                         </div>
                       );
                     }}
@@ -411,8 +411,8 @@ export default function SalesOverview({ data }: { data: SalesOverviewData | unde
 
       {/* Product-mix trend. */}
       <DashboardCard
-        title="MONTHLY REVENUE MIX BY CATEGORY"
-        addon={<InfoHint text="Stacked bars show category contribution by month, making product-mix changes easy to spot." />}
+        title="CƠ CẤU DOANH THU THEO DANH MỤC HÀNG THÁNG"
+        addon={<InfoHint text="Cột chồng thể hiện đóng góp của từng danh mục theo tháng, giúp dễ dàng nhận ra thay đổi trong cơ cấu sản phẩm." />}
       >
         <div className="bg-accent rounded-lg p-3 w-full">
           <div className="w-full h-72">

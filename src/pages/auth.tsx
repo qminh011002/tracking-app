@@ -50,7 +50,7 @@ export default function AuthPage() {
         password: signInPassword,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
+      setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
       return;
     }
 
@@ -74,7 +74,7 @@ export default function AuthPage() {
         storeId,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign up failed");
+      setError(err instanceof Error ? err.message : "Đăng ký thất bại");
       return;
     }
 
@@ -84,7 +84,7 @@ export default function AuthPage() {
     }
 
     setMessage(
-      "Account created. Check your email to confirm before signing in.",
+      "Đã tạo tài khoản. Vui lòng kiểm tra email để xác nhận trước khi đăng nhập.",
     );
   };
 
@@ -99,7 +99,7 @@ export default function AuthPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2 text-sm uppercase tracking-[0.16em] text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading auth...
+          Đang tải xác thực...
         </div>
       </div>
     );
@@ -186,10 +186,10 @@ export default function AuthPage() {
           <Tabs value={mode} onValueChange={(value) => switchMode(value as AuthMode)}>
             <TabsList className="w-full">
               <TabsTrigger value="signin" className="flex-1">
-                Sign In
+                Đăng nhập
               </TabsTrigger>
               <TabsTrigger value="signup" className="flex-1">
-                Sign Up
+                Đăng ký
               </TabsTrigger>
             </TabsList>
 
@@ -212,7 +212,7 @@ export default function AuthPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <Label htmlFor="signin-password">Mật khẩu</Label>
                   <div className="relative">
                     <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -229,7 +229,7 @@ export default function AuthPage() {
                       type="button"
                       onClick={() => setShowSignInPassword((prev) => !prev)}
                       className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                      aria-label={showSignInPassword ? "Hide password" : "Show password"}
+                      aria-label={showSignInPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                     >
                       {showSignInPassword ? (
                         <EyeOff className="size-4" />
@@ -250,7 +250,7 @@ export default function AuthPage() {
                   ) : (
                     <LockKeyhole className="size-4" />
                   )}
-                  {loading ? "Signing in..." : "Sign in"}
+                  {loading ? "Đang đăng nhập..." : "Đăng nhập"}
                 </Button>
               </form>
             </TabsContent>
@@ -258,13 +258,13 @@ export default function AuthPage() {
             <TabsContent value="signup" className="pt-5">
               <form className="space-y-4" onSubmit={handleSignUp}>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-store-id">Store ID</Label>
+                  <Label htmlFor="signup-store-id">Mã cửa hàng</Label>
                   <div className="relative">
                     <Store className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="signup-store-id"
                       required
-                      placeholder="your-store-id"
+                      placeholder="ma-cua-hang-cua-ban"
                       value={storeId}
                       onChange={(event) => setStoreId(event.target.value)}
                       className="h-11 pl-9"
@@ -288,7 +288,7 @@ export default function AuthPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">Mật khẩu</Label>
                   <div className="relative">
                     <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -305,7 +305,7 @@ export default function AuthPage() {
                       type="button"
                       onClick={() => setShowSignUpPassword((prev) => !prev)}
                       className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                      aria-label={showSignUpPassword ? "Hide password" : "Show password"}
+                      aria-label={showSignUpPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                     >
                       {showSignUpPassword ? (
                         <EyeOff className="size-4" />
@@ -326,7 +326,7 @@ export default function AuthPage() {
                   ) : (
                     <Store className="size-4" />
                   )}
-                  {loading ? "Creating account..." : "Sign up"}
+                  {loading ? "Đang tạo tài khoản..." : "Đăng ký"}
                 </Button>
               </form>
             </TabsContent>

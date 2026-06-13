@@ -190,14 +190,14 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
               isSold ? "bg-muted-foreground/60" : "bg-success",
             )}
           />
-          {isSold ? "Sold" : "In stock"}
+          {isSold ? "Đã bán" : "Còn hàng"}
         </Badge>
       </div>
 
       {/* Transaction timeline */}
       <div className="flex-1 px-4 pb-4">
         <TimelineStep
-          label="Purchased"
+          label="Nhập hàng"
           date={item.buyInfo.date}
           amount={item.buyInfo.amount}
           name={item.buyInfo.name}
@@ -206,7 +206,7 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
         />
         {isSold ? (
           <TimelineStep
-            label="Sold"
+            label="Đã bán"
             date={item.sellInfo.date}
             amount={item.sellInfo.amount}
             name={item.sellInfo.name}
@@ -216,9 +216,9 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
           />
         ) : (
           <TimelineStep
-            label="Awaiting sale"
+            label="Chờ bán"
             amount={null}
-            name={`${stockAgeDays} day${stockAgeDays === 1 ? "" : "s"} in stock`}
+            name={`Tồn kho ${stockAgeDays} ngày`}
             province=""
             state="pending"
             isLast
@@ -229,10 +229,10 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
       {/* Footer — net profit */}
       <div className="flex items-center justify-between gap-4 rounded-b-xl border-t bg-muted/40 px-4 py-3">
         <span className="text-xs font-medium text-muted-foreground">
-          Net profit
+          Lợi nhuận ròng
         </span>
         {profit === null ? (
-          <span className="text-sm text-muted-foreground">Pending</span>
+          <span className="text-sm text-muted-foreground">Đang chờ</span>
         ) : (
           <span className="flex items-center gap-2">
             <span

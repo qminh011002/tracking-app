@@ -77,18 +77,78 @@
       }
     ],
     "month": [
-      { "date": "Jan", "spendings": 45000, "sales": 180000, "coffee": 25000 },
-      { "date": "Feb", "spendings": 30000, "sales": 120000, "coffee": 20000 },
-      { "date": "Mar", "spendings": 65000, "sales": 280000, "coffee": 35000 },
-      { "date": "Apr", "spendings": 25000, "sales": 160000, "coffee": 18000 },
-      { "date": "May", "spendings": 80000, "sales": 350000, "coffee": 45000 },
-      { "date": "Jun", "spendings": 40000, "sales": 90000, "coffee": 25000 },
-      { "date": "Jul", "spendings": 70000, "sales": 220000, "coffee": 40000 },
-      { "date": "Aug", "spendings": 55000, "sales": 170000, "coffee": 30000 },
-      { "date": "Sep", "spendings": 60000, "sales": 200000, "coffee": 35000 },
-      { "date": "Oct", "spendings": 35000, "sales": 140000, "coffee": 22000 },
-      { "date": "Nov", "spendings": 75000, "sales": 340000, "coffee": 38000 },
-      { "date": "Dec", "spendings": 90000, "sales": 420000, "coffee": 50000 }
+      {
+        "date": "Jan",
+        "spendings": 45000,
+        "sales": 180000,
+        "coffee": 25000
+      },
+      {
+        "date": "Feb",
+        "spendings": 30000,
+        "sales": 120000,
+        "coffee": 20000
+      },
+      {
+        "date": "Mar",
+        "spendings": 65000,
+        "sales": 280000,
+        "coffee": 35000
+      },
+      {
+        "date": "Apr",
+        "spendings": 25000,
+        "sales": 160000,
+        "coffee": 18000
+      },
+      {
+        "date": "May",
+        "spendings": 80000,
+        "sales": 350000,
+        "coffee": 45000
+      },
+      {
+        "date": "Jun",
+        "spendings": 40000,
+        "sales": 90000,
+        "coffee": 25000
+      },
+      {
+        "date": "Jul",
+        "spendings": 70000,
+        "sales": 220000,
+        "coffee": 40000
+      },
+      {
+        "date": "Aug",
+        "spendings": 55000,
+        "sales": 170000,
+        "coffee": 30000
+      },
+      {
+        "date": "Sep",
+        "spendings": 60000,
+        "sales": 200000,
+        "coffee": 35000
+      },
+      {
+        "date": "Oct",
+        "spendings": 35000,
+        "sales": 140000,
+        "coffee": 22000
+      },
+      {
+        "date": "Nov",
+        "spendings": 75000,
+        "sales": 340000,
+        "coffee": 38000
+      },
+      {
+        "date": "Dec",
+        "spendings": 90000,
+        "sales": 420000,
+        "coffee": 50000
+      }
     ],
     "year": [
       {
@@ -115,7 +175,12 @@
         "sales": 520000,
         "coffee": 120000
       },
-      { "date": "2024", "spendings": 380000, "sales": 820000, "coffee": 200000 }
+      {
+        "date": "2024",
+        "spendings": 380000,
+        "sales": 820000,
+        "coffee": 200000
+      }
     ]
   },
   "rebelsRanking": [
@@ -218,5 +283,57 @@
     "temperature": "18°C",
     "weather": "Partly Cloudy",
     "date": "Wednesday, July 10th, 2025"
-  }
+  },
+  "missions": [
+    {
+      "id": "mission-1",
+      "productModel": "WH-1000XM6",
+      "target": 10,
+      "current": 7,
+      "reward": "Voucher du lịch 5.000.000đ",
+      "rewardType": "voucher",
+      "status": "active",
+      "deadline": "2026-06-30"
+    },
+    {
+      "id": "mission-2",
+      "productModel": "WF-1000XM5",
+      "target": 5,
+      "current": 5,
+      "reward": "Thưởng tiền mặt 2.000.000đ",
+      "rewardType": "cash",
+      "status": "completed",
+      "deadline": "2026-06-30"
+    },
+    {
+      "id": "mission-3",
+      "productModel": "WH-1000XM5",
+      "target": 8,
+      "current": 3,
+      "reward": "Apple Watch SE 2024",
+      "rewardType": "gift",
+      "status": "active",
+      "deadline": "2026-06-30"
+    },
+    {
+      "id": "mission-4",
+      "productModel": "WF-C710N",
+      "target": 15,
+      "current": 15,
+      "reward": "Thưởng 1.500.000đ",
+      "rewardType": "cash",
+      "status": "claimed",
+      "deadline": "2026-06-15"
+    },
+    {
+      "id": "mission-5",
+      "productModel": "ULT WEAR",
+      "target": 6,
+      "current": 2,
+      "reward": "Loa Sony SRS-ULT10",
+      "rewardType": "gift",
+      "status": "active",
+      "deadline": "2026-06-30"
+    }
+  ]
 }

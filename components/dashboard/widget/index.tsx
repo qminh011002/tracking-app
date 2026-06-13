@@ -168,7 +168,7 @@ export default function Widget({ widgetData }: WidgetProps) {
         </div>
 
         <div className="flex justify-center items-center">
-          <span>{isLocating ? "Locating..." : locationText}</span>
+          <span>{isLocating ? "Đang định vị..." : locationText}</span>
         </div>
       </CardContent>
     </Card>

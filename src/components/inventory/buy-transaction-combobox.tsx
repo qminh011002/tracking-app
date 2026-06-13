@@ -39,12 +39,12 @@ export function BuyTransactionCombobox({
       }
     >
       <ComboboxInput
-        placeholder={loading ? "Loading inventory..." : "Select buy inventory"}
+        placeholder={loading ? "Đang tải kho hàng..." : "Chọn hàng đã mua"}
         disabled={loading}
         className="w-full"
       />
       <ComboboxContent>
-        <ComboboxEmpty>No inventory found.</ComboboxEmpty>
+        <ComboboxEmpty>Không tìm thấy hàng trong kho.</ComboboxEmpty>
         <ComboboxList>
           {(item: SellableBuyTransactionItem) => (
             <ComboboxItem key={item.buy_transaction_id} value={item}>

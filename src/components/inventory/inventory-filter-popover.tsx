@@ -138,28 +138,28 @@ function InventoryFilterPopoverInner({
         className="max-h-[80vh] w-[min(92vw,760px)] shadow-2xl! border bg-popover space-y-4 overflow-y-auto p-4"
       >
         <div className="space-y-1">
-          <h4 className="text-sm font-semibold">Filter inventory</h4>
+          <h4 className="text-sm font-semibold">Lọc kho hàng</h4>
           <p className="text-xs text-muted-foreground">
-            Filter by date range, model, and buy/sell province.
+            Lọc theo khoảng thời gian, model và tỉnh/thành mua/bán.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-              Models
+              Sản phẩm
             </label>
             <Input
               value={modelFilterQuery}
               onChange={(event) => setModelFilterQuery(event.target.value)}
-              placeholder="Search model..."
+              placeholder="Tìm model..."
               className="h-9"
             />
             <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-border/60 bg-card p-2">
               {modelsLoading ? (
-                <div className="text-xs text-muted-foreground">Loading models...</div>
+                <div className="text-xs text-muted-foreground">Đang tải model...</div>
               ) : visibleModels.length === 0 ? (
-                <div className="text-xs text-muted-foreground">No model matched.</div>
+                <div className="text-xs text-muted-foreground">Không có model nào khớp.</div>
               ) : (
                 visibleModels.map((model) => {
                   const checked = draftFilters.modelIds.includes(model.id);
@@ -192,12 +192,12 @@ function InventoryFilterPopoverInner({
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                  Date from
+                  Từ ngày
                 </label>
                 <DatePicker
                   value={draftFilters.dateFrom}
                   max={draftFilters.dateTo || undefined}
-                  placeholder="Date from"
+                  placeholder="Từ ngày"
                   onChange={(value) =>
                     setDraftFilters((prev) => ({ ...prev, dateFrom: value }))
                   }
@@ -205,12 +205,12 @@ function InventoryFilterPopoverInner({
               </div>
               <div className="space-y-1">
                 <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                  Date to
+                  Đến ngày
                 </label>
                 <DatePicker
                   value={draftFilters.dateTo}
                   min={draftFilters.dateFrom || undefined}
-                  placeholder="Date to"
+                  placeholder="Đến ngày"
                   onChange={(value) =>
                     setDraftFilters((prev) => ({ ...prev, dateTo: value }))
                   }
@@ -221,7 +221,7 @@ function InventoryFilterPopoverInner({
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                  Buy province
+                  Tỉnh/Thành mua
                 </label>
                 {draftFilters.buyProvinceId && (
                   <button
@@ -231,7 +231,7 @@ function InventoryFilterPopoverInner({
                       setDraftFilters((prev) => ({ ...prev, buyProvinceId: "" }))
                     }
                   >
-                    Clear
+                    Xóa
                   </button>
                 )}
               </div>
@@ -242,14 +242,14 @@ function InventoryFilterPopoverInner({
                 }
                 provinces={provinces}
                 loading={provincesLoading}
-                placeholder="All provinces"
+                placeholder="Tất cả tỉnh/thành"
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <label className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                  Sell province
+                  Tỉnh/Thành bán
                 </label>
                 {draftFilters.sellProvinceId && (
                   <button
@@ -259,7 +259,7 @@ function InventoryFilterPopoverInner({
                       setDraftFilters((prev) => ({ ...prev, sellProvinceId: "" }))
                     }
                   >
-                    Clear
+                    Xóa
                   </button>
                 )}
               </div>
@@ -270,7 +270,7 @@ function InventoryFilterPopoverInner({
                 }
                 provinces={provinces}
                 loading={provincesLoading}
-                placeholder="All provinces"
+                placeholder="Tất cả tỉnh/thành"
               />
             </div>
           </div>
@@ -278,7 +278,7 @@ function InventoryFilterPopoverInner({
 
         {invalidDateRange && (
           <p className="text-xs text-destructive">
-            Date range is invalid. "Date from" must be before "Date to".
+            Khoảng thời gian không hợp lệ. "Từ ngày" phải trước "Đến ngày".
           </p>
         )}
 
@@ -292,7 +292,7 @@ function InventoryFilterPopoverInner({
               setOpen(false);
             }}
           >
-            Clear all
+            Xóa tất cả
           </Button>
             <Button
               type="button"
@@ -304,7 +304,7 @@ function InventoryFilterPopoverInner({
               className="bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={invalidDateRange}
             >
-            Apply filters
+            Áp dụng bộ lọc
           </Button>
         </div>
       </PopoverContent>

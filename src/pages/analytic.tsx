@@ -26,10 +26,10 @@ import TaxCalendar from "@/src/components/analytics/tax-calendar";
 type DatePreset = "this_month" | "this_quarter" | "this_year" | "custom";
 
 const DATE_PRESETS: { value: DatePreset; label: string }[] = [
-  { value: "this_month", label: "This month" },
-  { value: "this_quarter", label: "This quarter" },
-  { value: "this_year", label: "This year" },
-  { value: "custom", label: "Custom" },
+  { value: "this_month", label: "Tháng này" },
+  { value: "this_quarter", label: "Quý này" },
+  { value: "this_year", label: "Năm nay" },
+  { value: "custom", label: "Tùy chỉnh" },
 ];
 
 function formatDateParam(date: Date) {
@@ -136,8 +136,8 @@ export default function AnalyticPage() {
   return (
     <DashboardPageLayout
       header={{
-        title: "Analytics",
-        description: "Business analytics and 2026 tax estimator",
+        title: "Phân tích",
+        description: "Phân tích kinh doanh và ước tính thuế 2026",
         icon: ChartArea,
       }}
     >
@@ -145,7 +145,7 @@ export default function AnalyticPage() {
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
           <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-            Date range
+            Khoảng thời gian
           </div>
           <Select
             value={preset}
@@ -175,7 +175,7 @@ export default function AnalyticPage() {
           <>
             <div className="space-y-1">
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                From
+                Từ
               </div>
               <DatePicker
                 value={range.from}
@@ -186,7 +186,7 @@ export default function AnalyticPage() {
             </div>
             <div className="space-y-1">
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                To
+                Đến
               </div>
               <DatePicker
                 value={range.to}
@@ -208,19 +208,19 @@ export default function AnalyticPage() {
       >
         <TabsList className="w-full flex flex-wrap h-auto gap-1">
           <TabsTrigger value="sales" className="flex-1 min-w-25">
-            Sales
+            Doanh số
           </TabsTrigger>
           <TabsTrigger value="products" className="flex-1 min-w-25">
-            Products
+            Sản phẩm
           </TabsTrigger>
           <TabsTrigger value="geo" className="flex-1 min-w-25">
-            Geography
+            Khu vực
           </TabsTrigger>
           <TabsTrigger value="tax" className="flex-1 min-w-25">
-            Tax 2026
+            Thuế 2026
           </TabsTrigger>
           <TabsTrigger value="calendar" className="flex-1 min-w-25">
-            Tax calendar
+            Lịch thuế
           </TabsTrigger>
         </TabsList>
 

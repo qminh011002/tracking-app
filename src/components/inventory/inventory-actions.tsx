@@ -29,7 +29,7 @@ export function InventoryActions({
             clipPath: "polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%)",
           }}
         >
-          Buy
+          Mua
         </Button>
 
         {/* SELL */}
@@ -42,7 +42,7 @@ export function InventoryActions({
             clipPath: "polygon(22px 0, 100% 0, 100% 100%, 0 100%)",
           }}
         >
-          Sell
+          Bán
         </Button>
       </div>
       <BuyFormDialog

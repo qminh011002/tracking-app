@@ -162,15 +162,15 @@ function VietnamMap({ data, revenueMax }: { data: GeoAnalyticsData; revenueMax: 
         (feat.properties as Record<string, unknown>)?.name_vi ??
         "",
     );
-    const name = province?.provinceName || rawName || "Unknown";
+    const name = province?.provinceName || rawName || "Không xác định";
 
     const tooltip = province
       ? `<div style="font-weight:600">${name}</div>
-         <div>Revenue: ${formatVndFull(province.revenue)}</div>
-         <div>Orders: ${formatNumber(province.orders)}</div>
-         <div>AOV: ${formatVndFull(province.aov)}</div>
-         <div>Top: ${province.topProduct}</div>`
-      : `<div style="font-weight:600">${name}</div><div>No sales</div>`;
+         <div>Doanh thu: ${formatVndFull(province.revenue)}</div>
+         <div>Đơn hàng: ${formatNumber(province.orders)}</div>
+         <div>Giá trị đơn TB: ${formatVndFull(province.aov)}</div>
+         <div>Cao nhất: ${province.topProduct}</div>`
+      : `<div style="font-weight:600">${name}</div><div>Không có doanh số</div>`;
 
     layer.bindTooltip(tooltip, { sticky: true, direction: "top", opacity: 0.95 });
 
@@ -242,7 +242,7 @@ export default function GeoAnalytics({ data }: { data: GeoAnalyticsData | undefi
   if (!data) {
     return (
       <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
-        Loading data...
+        Đang tải dữ liệu...
       </div>
     );
   }
@@ -251,14 +251,14 @@ export default function GeoAnalytics({ data }: { data: GeoAnalyticsData | undefi
   const top10Provinces = data.byProvince.slice(0, 10);
 
   const provinceBarConfig = {
-    revenue: { label: "Revenue", color: "var(--chart-2)" },
+    revenue: { label: "Doanh thu", color: "var(--chart-2)" },
   } satisfies ChartConfig;
 
   return (
     <div className="space-y-6">
       <DashboardCard
-        title="VIETNAM PROVINCE REVENUE MAP"
-        addon={<InfoHint text="Interactive map: scroll or use +/- to zoom down to street level, drag to pan, switch base layers (street / light / satellite) top-left. Province shading shows revenue; top 5 provinces are outlined in red. Hover a province for details." />}
+        title="BẢN ĐỒ DOANH THU THEO TỈNH/THÀNH"
+        addon={<InfoHint text="Bản đồ tương tác: cuộn hoặc dùng +/- để phóng to xuống cấp đường phố, kéo để di chuyển, đổi lớp bản đồ nền (đường phố / sáng / vệ tinh) ở góc trên bên trái. Màu tô của tỉnh/thành thể hiện doanh thu; 5 tỉnh/thành dẫn đầu được viền đỏ. Di chuột vào một tỉnh/thành để xem chi tiết." />}
       >
         <div className="bg-accent rounded-lg p-3 w-full">
           <div className="w-full h-[clamp(34rem,70vh,56rem)]">
@@ -266,13 +266,13 @@ export default function GeoAnalytics({ data }: { data: GeoAnalyticsData | undefi
           </div>
         </div>
         <div className="text-xs text-muted-foreground mt-2">
-          Top contributors: {data.byProvince.slice(0, 5).map((item) => item.provinceName).join(", ") || "No data"}
+          Đóng góp nhiều nhất: {data.byProvince.slice(0, 5).map((item) => item.provinceName).join(", ") || "Không có dữ liệu"}
         </div>
       </DashboardCard>
 
       <DashboardCard
-        title="TOP 10 PROVINCES BY REVENUE"
-        addon={<InfoHint text="Sorted horizontal bars for fast province performance comparison." />}
+        title="TOP 10 TỈNH/THÀNH THEO DOANH THU"
+        addon={<InfoHint text="Các thanh ngang được sắp xếp để so sánh nhanh hiệu suất giữa các tỉnh/thành." />}
       >
         <div className="bg-accent rounded-lg p-3 w-full">
           <div className="w-full h-96">
@@ -299,19 +299,19 @@ export default function GeoAnalytics({ data }: { data: GeoAnalyticsData | undefi
         </DashboardCard>
 
       <DashboardCard
-        title="PROVINCE DETAIL TABLE"
-        addon={<InfoHint text="Province-level detail with orders, revenue, AOV, and top-selling product." />}
+        title="BẢNG CHI TIẾT THEO TỈNH/THÀNH"
+        addon={<InfoHint text="Chi tiết theo từng tỉnh/thành với đơn hàng, doanh thu, giá trị đơn TB và sản phẩm bán chạy nhất." />}
       >
         <div className="bg-accent rounded-lg overflow-auto max-h-96">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-accent">
               <tr className="border-b border-border/60">
-                <th className="text-left p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Province</th>
-                <th className="text-left p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Region</th>
-                <th className="text-right p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Orders</th>
-                <th className="text-right p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Revenue</th>
-                <th className="text-right p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">AOV</th>
-                <th className="text-left p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Top product</th>
+                <th className="text-left p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Tỉnh/Thành</th>
+                <th className="text-left p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Khu vực</th>
+                <th className="text-right p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Đơn hàng</th>
+                <th className="text-right p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Doanh thu</th>
+                <th className="text-right p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Giá trị đơn TB</th>
+                <th className="text-left p-2.5 font-medium text-muted-foreground uppercase tracking-wide text-xs">Sản phẩm bán chạy</th>
               </tr>
             </thead>
             <tbody>
@@ -328,7 +328,7 @@ export default function GeoAnalytics({ data }: { data: GeoAnalyticsData | undefi
               {data.byProvince.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-center text-muted-foreground py-8 uppercase">
-                    No data
+                    Không có dữ liệu
                   </td>
                 </tr>
               )}

@@ -4,24 +4,22 @@ import { RequireAuth } from "./components/auth/require-auth";
 import { RootLayout } from "./layouts/root-layout";
 import AnalyticPage from "./pages/analytic";
 import AuthPage from "./pages/auth";
-import DashboardOverview from "./pages/dashboard-overview";
 import DevicePage from "./pages/device";
 import InventoryPage from "./pages/inventory";
 import InventoryDetailPage from "./pages/inventory-detail";
 import NotFoundPage from "./pages/not-found";
 import WarrantyCheckingPage from "./pages/warranty-checking";
 
-const APP_NAME = "Inventory";
+const APP_NAME = "Quản lý kho";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/auth": "Sign In",
-  "/": "Dashboard",
-  "/analytic": "Analytics",
-  "/analytics": "Analytics",
-  "/inventory": "Inventory",
-  "/warranty-checking": "Warranty Check",
-  "/device": "Devices",
-  "/404": "Page Not Found",
+  "/auth": "Đăng nhập",
+  "/analytic": "Phân tích",
+  "/analytics": "Phân tích",
+  "/inventory": "Kho hàng",
+  "/warranty-checking": "Kiểm tra bảo hành",
+  "/device": "Thiết bị",
+  "/404": "Không tìm thấy trang",
 };
 
 function DocumentTitle() {
@@ -29,7 +27,7 @@ function DocumentTitle() {
 
   React.useEffect(() => {
     let page = PAGE_TITLES[pathname];
-    if (!page && pathname.startsWith("/inventory/")) page = "Inventory Detail";
+    if (!page && pathname.startsWith("/inventory/")) page = "Chi tiết kho hàng";
     document.title = page ? `${page} · ${APP_NAME}` : APP_NAME;
   }, [pathname]);
 
@@ -49,7 +47,7 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<DashboardOverview />} />
+        <Route index element={<Navigate to="/analytic" replace />} />
         <Route path="analytic" element={<AnalyticPage />} />
         <Route path="analytics" element={<AnalyticPage />} />
         <Route path="inventory" element={<InventoryPage />} />

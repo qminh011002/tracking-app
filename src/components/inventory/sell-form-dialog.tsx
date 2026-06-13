@@ -53,42 +53,42 @@ const isNotFutureDate = (value: string) => {
 };
 
 const sellFormSchema = z.object({
-  buyTransactionId: z.string().min(1, "Buy inventory is required"),
+  buyTransactionId: z.string().min(1, "Kho hàng mua là bắt buộc"),
   sellType: z.enum(["SHIP", "DIRECT"]),
-  buyerProvinceId: z.string().min(1, "Province is required"),
-  buyerName: z.string().min(1, "Buyer name is required"),
+  buyerProvinceId: z.string().min(1, "Tỉnh/Thành là bắt buộc"),
+  buyerName: z.string().min(1, "Tên người mua là bắt buộc"),
   buyerPhone: z
     .string()
     .optional()
     .refine((value) => !value || /^\d{10}$/.test(value), {
-      message: "Buyer phone must be exactly 10 digits",
+      message: "Số điện thoại người mua phải có đúng 10 chữ số",
     }),
   sellPrice: z.string().refine((value) => /^\d+$/.test(value), {
-    message: "Sell price is required",
+    message: "Giá bán là bắt buộc",
   }),
   depositAmount: z
     .string()
     .optional()
     .refine((value) => !value || /^\d+$/.test(value), {
-      message: "Deposit amount is invalid",
+      message: "Số tiền đặt cọc không hợp lệ",
     }),
   shippingFee: z
     .string()
     .optional()
     .refine((value) => !value || /^\d+$/.test(value), {
-      message: "Shipping fee is invalid",
+      message: "Phí vận chuyển không hợp lệ",
     }),
   sellDate: z
     .string()
-    .min(1, "Sell date is required")
+    .min(1, "Ngày bán là bắt buộc")
     .refine((value) => /^\d{4}-\d{2}-\d{2}$/.test(value), {
-      message: "Sell date must be in YYYY-MM-DD format",
+      message: "Ngày bán phải theo định dạng YYYY-MM-DD",
     })
     .refine((value) => isValidDateValue(value), {
-      message: "Sell date is invalid",
+      message: "Ngày bán không hợp lệ",
     })
     .refine((value) => isNotFutureDate(value), {
-      message: "Sell date cannot be in the future",
+      message: "Ngày bán không thể ở tương lai",
     }),
 });
 
@@ -187,7 +187,7 @@ export function SellFormDialog({
     });
 
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "Invalid SELL form";
+      const message = parsed.error.issues[0]?.message ?? "Biểu mẫu BÁN không hợp lệ";
       setSellError(message);
       return;
     }
@@ -211,11 +211,11 @@ export function SellFormDialog({
     });
 
     if (!result.ok) {
-      setSellError(result.error ?? "Failed to create SELL");
+      setSellError(result.error ?? "Tạo BÁN thất bại");
       toast({
         variant: "destructive",
-        title: "Create SELL failed",
-        description: result.error ?? "Failed to create SELL",
+        title: "Tạo BÁN thất bại",
+        description: result.error ?? "Tạo BÁN thất bại",
       });
       return;
     }
@@ -224,8 +224,8 @@ export function SellFormDialog({
     resetSell();
     onCreated();
     toast({
-      title: "SELL created",
-      description: "Sell transaction has been created successfully.",
+      title: "Đã tạo BÁN",
+      description: "Giao dịch bán đã được tạo thành công.",
     });
   };
 
@@ -233,9 +233,9 @@ export function SellFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create SELL</DialogTitle>
+          <DialogTitle>Tạo BÁN</DialogTitle>
           <DialogDescription>
-            Add sell transaction linked to an existing BUY.
+            Thêm giao dịch bán liên kết với một giao dịch MUA hiện có.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -243,7 +243,7 @@ export function SellFormDialog({
           onSubmit={handleCreateSell}
         >
           <div className="space-y-2 md:col-span-2">
-            <Label>Buy Inventory *</Label>
+            <Label>Kho hàng mua *</Label>
             <BuyTransactionCombobox
               value={buyTransactionId}
               onChange={setBuyTransactionId}
@@ -252,7 +252,7 @@ export function SellFormDialog({
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>Sell Type</Label>
+            <Label>Loại bán</Label>
             <Select
               value={sellType}
               onValueChange={(v) => {
@@ -293,15 +293,15 @@ export function SellFormDialog({
           {sellType === "SHIP" && (
             <>
               <div className="space-y-2">
-                <Label>Shipping Fee</Label>
+                <Label>Phí vận chuyển</Label>
                 <MoneyInput
-                  placeholder="e.g. 50.000"
+                  placeholder="vd. 50.000"
                   valueDigits={shippingFee}
                   onValueDigitsChange={setShippingFee}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Shipping Paid By</Label>
+                <Label>Người trả phí vận chuyển</Label>
                 <Select
                   value={shippingPaidBy}
                   onValueChange={(v) =>
@@ -309,18 +309,18 @@ export function SellFormDialog({
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select payer" />
+                    <SelectValue placeholder="Chọn người trả phí" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="seller">seller</SelectItem>
-                    <SelectItem value="buyer">buyer</SelectItem>
+                    <SelectItem value="seller">Người bán</SelectItem>
+                    <SelectItem value="buyer">Người mua</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </>
           )}
           <div className="space-y-2">
-            <Label>Buyer Province *</Label>
+            <Label>Tỉnh/Thành người mua *</Label>
             <ProvinceCombobox
               value={buyerProvinceId}
               onChange={setBuyerProvinceId}
@@ -329,47 +329,47 @@ export function SellFormDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>Buyer Address Detail</Label>
+            <Label>Địa chỉ chi tiết người mua</Label>
             <Input
               value={buyerAddress}
               onChange={(e) => setBuyerAddress(e.target.value)}
-              placeholder="e.g. 123 Nguyen Trai, District 1"
+              placeholder="vd. 123 Nguyễn Trãi, Quận 1"
             />
           </div>
           <div className="space-y-2">
-            <Label>Buyer Name</Label>
+            <Label>Tên người mua</Label>
             <Input
-              placeholder="e.g. Nguyen Van B"
+              placeholder="vd. Nguyễn Văn B"
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label>Buyer Phone (Optional)</Label>
+            <Label>Số điện thoại người mua (Tùy chọn)</Label>
             <Input
-              placeholder="Optional - 10 digits, e.g. 0987654321"
+              placeholder="Tùy chọn - 10 chữ số, vd. 0987654321"
               value={buyerPhone}
               onChange={(e) => setBuyerPhone(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label>Sell Price</Label>
+            <Label>Giá bán</Label>
             <MoneyInput
-              placeholder="e.g. 2.500.000"
+              placeholder="vd. 2.500.000"
               valueDigits={sellPrice}
               onValueDigitsChange={setSellPrice}
             />
           </div>
           <div className="space-y-2">
-            <Label>Deposit Amount</Label>
+            <Label>Số tiền đặt cọc</Label>
             <MoneyInput
-              placeholder="e.g. 500.000"
+              placeholder="vd. 500.000"
               valueDigits={depositAmount}
               onValueDigitsChange={setDepositAmount}
             />
           </div>
           <div className="space-y-2">
-            <Label>Sell Date</Label>
+            <Label>Ngày bán</Label>
             <DatePicker
               value={sellDate}
               max={new Date().toISOString().slice(0, 10)}
@@ -377,7 +377,7 @@ export function SellFormDialog({
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>Images</Label>
+            <Label>Hình ảnh</Label>
             <input
               key={sellImageInputKey}
               id="sell-images-input"
@@ -395,7 +395,7 @@ export function SellFormDialog({
                 >
                   <img
                     src={sellImagePreviews[index]}
-                    alt={`Sell preview ${index + 1}`}
+                    alt={`Xem trước ảnh bán ${index + 1}`}
                     className="size-full rounded-md object-cover border border-border/60"
                   />
                   <Button
@@ -406,7 +406,7 @@ export function SellFormDialog({
                     onClick={() => removeSellImage(index)}
                   >
                     <X className="size-3" />
-                    <span className="sr-only">Remove image</span>
+                    <span className="sr-only">Xóa hình ảnh</span>
                   </Button>
                 </div>
               ))}
@@ -418,7 +418,7 @@ export function SellFormDialog({
                 <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
                   <Plus className="size-5" />
                   <span className="text-xs uppercase tracking-[0.12em]">
-                    Image
+                    Hình ảnh
                   </span>
                 </div>
               </label>
@@ -431,14 +431,14 @@ export function SellFormDialog({
           )}
           <DialogFooter className="md:col-span-2">
             <Button type="button" variant="outline" onClick={closeDialogSafely}>
-              Cancel
+              Hủy
             </Button>
             <Button
               type="submit"
               className="bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={sellLoading}
             >
-              {sellLoading ? "Creating..." : "Create SELL"}
+              {sellLoading ? "Đang tạo..." : "Tạo BÁN"}
             </Button>
           </DialogFooter>
         </form>

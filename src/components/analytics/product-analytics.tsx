@@ -33,7 +33,7 @@ export default function ProductAnalytics({
   if (!data) {
     return (
       <div className="rounded-lg border border-border/60 bg-card px-4 py-10 text-center text-muted-foreground uppercase">
-        Loading data...
+        Đang tải dữ liệu...
       </div>
     );
   }
@@ -62,24 +62,24 @@ export default function ProductAnalytics({
   const totalBrandUnits = brandUnits.reduce((sum, item) => sum + item.units, 0);
 
   const topProductConfig = {
-    revenue: { label: "Revenue", color: "var(--chart-1)" },
-    quantity: { label: "Units", color: "var(--chart-3)" },
+    revenue: { label: "Doanh thu", color: "var(--chart-1)" },
+    quantity: { label: "Số lượng", color: "var(--chart-3)" },
   } satisfies ChartConfig;
 
   const scatterConfig = {
-    avgPrice: { label: "Price", color: "var(--chart-2)" },
+    avgPrice: { label: "Giá", color: "var(--chart-2)" },
   } satisfies ChartConfig;
 
   const brandUnitsConfig = {
-    units: { label: "Units sold", color: "var(--chart-3)" },
+    units: { label: "Số lượng đã bán", color: "var(--chart-3)" },
   } satisfies ChartConfig;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardCard
-          title="TOP 10 BEST-SELLING PRODUCTS (UNITS + REVENUE)"
-          addon={<InfoHint text="Ranks SKUs by sales performance. Revenue uses the bottom axis (VND); units sold use the top axis." />}
+          title="TOP 10 SẢN PHẨM BÁN CHẠY NHẤT (SỐ LƯỢNG + DOANH THU)"
+          addon={<InfoHint text="Xếp hạng SKU theo hiệu suất bán hàng. Doanh thu dùng trục dưới (VND); số lượng đã bán dùng trục trên." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-96">
@@ -126,8 +126,8 @@ export default function ProductAnalytics({
                       return (
                         <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
                           <div className="font-medium">{row.model}</div>
-                          <div className="text-muted-foreground">Units: {row.quantity}</div>
-                          <div className="text-muted-foreground">Revenue: {formatVndFull(row.revenue)}</div>
+                          <div className="text-muted-foreground">Số lượng: {row.quantity}</div>
+                          <div className="text-muted-foreground">Doanh thu: {formatVndFull(row.revenue)}</div>
                         </div>
                       );
                     }}
@@ -141,8 +141,8 @@ export default function ProductAnalytics({
         </DashboardCard>
 
         <DashboardCard
-          title="PRICE VS UNITS SCATTER (BUBBLE SIZE = REVENUE)"
-          addon={<InfoHint text="Each point is a SKU. X-axis is average selling price, Y-axis is sold quantity, bubble size is revenue." />}
+          title="GIÁ SO VỚI SỐ LƯỢNG (KÍCH THƯỚC BONG BÓNG = DOANH THU)"
+          addon={<InfoHint text="Mỗi điểm là một SKU. Trục X là giá bán trung bình, trục Y là số lượng đã bán, kích thước bong bóng là doanh thu." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-96">
@@ -177,9 +177,9 @@ export default function ProductAnalytics({
                       return (
                         <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
                           <div className="font-medium">{row.model}</div>
-                          <div className="text-muted-foreground">Avg price: {formatVndFull(row.avgPrice)}</div>
-                          <div className="text-muted-foreground">Units: {row.quantity}</div>
-                          <div className="text-muted-foreground">Revenue: {formatVndFull(row.revenue)}</div>
+                          <div className="text-muted-foreground">Giá TB: {formatVndFull(row.avgPrice)}</div>
+                          <div className="text-muted-foreground">Số lượng: {row.quantity}</div>
+                          <div className="text-muted-foreground">Doanh thu: {formatVndFull(row.revenue)}</div>
                         </div>
                       );
                     }}
@@ -198,8 +198,8 @@ export default function ProductAnalytics({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardCard
-          title="REVENUE SHARE BY BRAND"
-          addon={<InfoHint text="Shows brand-level revenue contribution so you can evaluate portfolio concentration." />}
+          title="TỶ TRỌNG DOANH THU THEO THƯƠNG HIỆU"
+          addon={<InfoHint text="Hiển thị đóng góp doanh thu theo từng thương hiệu để bạn có thể đánh giá mức độ tập trung danh mục." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-80">
@@ -247,8 +247,8 @@ export default function ProductAnalytics({
         </DashboardCard>
 
         <DashboardCard
-          title="UNITS SOLD BY BRAND"
-          addon={<InfoHint text="How many units each brand has sold in the period, ranked. Hover for revenue and average selling price." />}
+          title="SỐ LƯỢNG ĐÃ BÁN THEO THƯƠNG HIỆU"
+          addon={<InfoHint text="Số lượng mỗi thương hiệu đã bán trong kỳ, được xếp hạng. Di chuột để xem doanh thu và giá bán trung bình." />}
         >
           <div className="bg-accent rounded-lg p-3 w-full">
             <div className="w-full h-80">
@@ -287,9 +287,9 @@ export default function ProductAnalytics({
                       return (
                         <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
                           <div className="font-medium">{row.brand}</div>
-                          <div className="text-muted-foreground">Units: {row.units} ({share}%)</div>
-                          <div className="text-muted-foreground">Revenue: {formatVndFull(row.revenue)}</div>
-                          <div className="text-muted-foreground">Avg price: {formatVndFull(row.avgPrice)}</div>
+                          <div className="text-muted-foreground">Số lượng: {row.units} ({share}%)</div>
+                          <div className="text-muted-foreground">Doanh thu: {formatVndFull(row.revenue)}</div>
+                          <div className="text-muted-foreground">Giá TB: {formatVndFull(row.avgPrice)}</div>
                         </div>
                       );
                     }}

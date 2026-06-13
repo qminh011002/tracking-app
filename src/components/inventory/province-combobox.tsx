@@ -22,8 +22,8 @@ export function ProvinceCombobox({
   onChange,
   provinces,
   loading = false,
-  placeholder = "Select province",
-  emptyLabel = "No province found.",
+  placeholder = "Chọn tỉnh/thành",
+  emptyLabel = "Không tìm thấy tỉnh/thành.",
 }: ProvinceComboboxProps) {
   const selectedProvince =
     provinces.find((province) => String(province.id) === value) ?? null;
@@ -39,7 +39,7 @@ export function ProvinceCombobox({
       itemToStringValue={(item: ProvinceItem) => String(item.id)}
     >
       <ComboboxInput
-        placeholder={loading ? "Loading provinces..." : placeholder}
+        placeholder={loading ? "Đang tải tỉnh/thành..." : placeholder}
         disabled={loading}
         className="w-full"
       />
