@@ -156,13 +156,41 @@
     @apply border-border outline-ring/50;
     scrollbar-width: thin;
     scrollbar-color: oklch(0.5 0.01 255) oklch(0.24 0.01 255);
+    /* Kill the grey flash on tap for a native-app feel on mobile */
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    /* Don't let iOS/Android reflow font sizes on rotate */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     overflow-y: auto;
     overflow-x: hidden;
+    /* No pull-to-refresh / rubber-band leaking to the page shell */
+    overscroll-behavior-y: none;
     text-rendering: optimizeLegibility;
     font-feature-settings: "cv03", "cv04", "cv11";
+  }
+
+  /* Momentum scrolling + contained overscroll for inner scroll panes */
+  .overflow-y-auto,
+  .overflow-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Honour the notch/home-indicator on the app shell */
+  [data-slot="sidebar-inset"] {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   /* Money, IMEI/serial and other figures align in columns */

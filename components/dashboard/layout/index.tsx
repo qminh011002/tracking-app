@@ -18,7 +18,7 @@ export default function DashboardPageLayout({
 }: DashboardPageLayoutProps) {
   return (
     <div className="flex flex-col relative w-full gap-1 min-h-full">
-      <div className="flex items-center lg:items-baseline gap-2.5 md:gap-4 px-4 md:px-6 lg:pl-2 py-3 md:pb-4 lg:pt-2 ring-2 ring-pop sticky top-header-mobile lg:top-0 bg-background z-10">
+      <div className="flex items-center lg:items-baseline gap-2.5 md:gap-4 px-4 md:px-6 lg:pl-2 py-3 md:pb-4 lg:pt-2 ring-2 ring-pop sticky top-0 bg-background z-30">
         <SidebarTrigger
           variant="ghost"
           className="hidden lg:flex my-auto self-center size-8 text-muted-foreground hover:text-foreground"
