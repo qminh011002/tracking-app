@@ -30,6 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { InventoryItem } from "@/components/inventory/inventory-card";
 import { ConfirmDialog } from "@/src/components/common/confirm-dialog";
+import { MoneyInput } from "@/src/components/inventory/money-input";
 import { ProvinceCombobox } from "@/src/components/inventory/province-combobox";
 import {
   useDeleteInventoryMutation,
@@ -631,23 +632,21 @@ export function InventoryDetailDialog({
                   Nhập hàng
                 </span>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Amount (VND)" htmlFor="buy-edit-amount">
-                    <Input
+                  <Field label="Số tiền (VND)" htmlFor="buy-edit-amount">
+                    <MoneyInput
                       id="buy-edit-amount"
-                      type="number"
-                      min={0}
                       placeholder="0"
-                      value={form.buy.amount}
-                      onChange={(event) =>
+                      valueDigits={form.buy.amount}
+                      onValueDigitsChange={(nextDigits) =>
                         setForm((prev) =>
                           prev
-                            ? { ...prev, buy: { ...prev.buy, amount: event.target.value } }
+                            ? { ...prev, buy: { ...prev.buy, amount: nextDigits } }
                             : prev,
                         )
                       }
                     />
                   </Field>
-                  <Field label="Buy date" htmlFor="buy-edit-date">
+                  <Field label="Ngày nhập" htmlFor="buy-edit-date">
                     <DatePicker
                       id="buy-edit-date"
                       value={form.buy.date}
@@ -661,10 +660,10 @@ export function InventoryDetailDialog({
                   </Field>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Contact person" htmlFor="buy-edit-name">
+                  <Field label="Người liên hệ" htmlFor="buy-edit-name">
                     <Input
                       id="buy-edit-name"
-                      placeholder="Name"
+                      placeholder="Tên người bán"
                       value={form.buy.name}
                       onChange={(event) =>
                         setForm((prev) =>
@@ -673,7 +672,7 @@ export function InventoryDetailDialog({
                       }
                     />
                   </Field>
-                  <Field label="Phone" htmlFor="buy-edit-phone">
+                  <Field label="Số điện thoại" htmlFor="buy-edit-phone">
                     <Input
                       id="buy-edit-phone"
                       inputMode="numeric"
@@ -687,14 +686,14 @@ export function InventoryDetailDialog({
                     />
                   </Field>
                 </div>
-                <Field label="Warranty expiry (optional)" htmlFor="buy-edit-warranty">
+                <Field label="Hạn bảo hành (không bắt buộc)" htmlFor="buy-edit-warranty">
                   <div className="flex gap-2">
                     <DatePicker
                       id="buy-edit-warranty"
                       value={form.buy.warrantyExpiryDate}
                       min={new Date().toISOString().slice(0, 10)}
                       max="2030-12-31"
-                      placeholder="Select warranty expiry date"
+                      placeholder="Chọn hạn bảo hành"
                       onChange={(value) =>
                         setForm((prev) =>
                           prev
@@ -728,15 +727,15 @@ export function InventoryDetailDialog({
                           )
                         }
                       >
-                        Clear
+                        Xóa
                       </Button>
                     )}
                   </div>
                 </Field>
-                <Field label="Address detail" htmlFor="buy-edit-address">
+                <Field label="Địa chỉ chi tiết" htmlFor="buy-edit-address">
                   <Input
                     id="buy-edit-address"
-                    placeholder="Street, ward, district..."
+                    placeholder="Số nhà, đường, phường/xã..."
                     value={form.buy.addressDetail}
                     onChange={(event) =>
                       setForm((prev) =>
@@ -747,7 +746,7 @@ export function InventoryDetailDialog({
                     }
                   />
                 </Field>
-                <Field label="Province">
+                <Field label="Tỉnh/Thành phố">
                   <ProvinceCombobox
                     value={form.buy.provinceId}
                     onChange={(value) =>
@@ -757,12 +756,12 @@ export function InventoryDetailDialog({
                     }
                     provinces={provincesData}
                     loading={provincesLoading}
-                    placeholder="Buy province"
+                    placeholder="Tỉnh/Thành phố nhập hàng"
                   />
                 </Field>
                 <div className="space-y-2 pt-1">
                   <label className="text-xs font-medium text-muted-foreground">
-                    Upload images
+                    Tải ảnh lên
                   </label>
                   <input
                     id="buy-edit-images-input"
@@ -785,7 +784,7 @@ export function InventoryDetailDialog({
                       >
                         <img
                           src={buyImagePreviews[index]}
-                          alt={`Buy edit preview ${index + 1}`}
+                          alt={`Ảnh nhập hàng xem trước ${index + 1}`}
                           className="size-full rounded-md object-cover border border-border/60"
                         />
                         <Button
@@ -800,7 +799,7 @@ export function InventoryDetailDialog({
                           }
                         >
                           <X className="size-3" />
-                          <span className="sr-only">Remove image</span>
+                          <span className="sr-only">Xóa ảnh</span>
                         </Button>
                       </div>
                     ))}
@@ -810,7 +809,7 @@ export function InventoryDetailDialog({
                     >
                       <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
                         <Plus className="size-4" />
-                        <span className="text-[10px] font-medium">Image</span>
+                        <span className="text-[10px] font-medium">Ảnh</span>
                       </div>
                     </label>
                   </div>
@@ -819,28 +818,26 @@ export function InventoryDetailDialog({
 
               <div className="space-y-3 rounded-xl bg-muted/40 p-4">
                 <span className="text-sm font-medium text-foreground">
-                  Sale
+                  Bán hàng
                 </span>
                 {item.sellInfo.transactionId ? (
                   <>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Amount (VND)" htmlFor="sell-edit-amount">
-                        <Input
+                      <Field label="Số tiền (VND)" htmlFor="sell-edit-amount">
+                        <MoneyInput
                           id="sell-edit-amount"
-                          type="number"
-                          min={0}
                           placeholder="0"
-                          value={form.sell.amount}
-                          onChange={(event) =>
+                          valueDigits={form.sell.amount}
+                          onValueDigitsChange={(nextDigits) =>
                             setForm((prev) =>
                               prev
-                                ? { ...prev, sell: { ...prev.sell, amount: event.target.value } }
+                                ? { ...prev, sell: { ...prev.sell, amount: nextDigits } }
                                 : prev,
                             )
                           }
                         />
                       </Field>
-                      <Field label="Sell date" htmlFor="sell-edit-date">
+                      <Field label="Ngày bán" htmlFor="sell-edit-date">
                         <DatePicker
                           id="sell-edit-date"
                           value={form.sell.date}
@@ -856,10 +853,10 @@ export function InventoryDetailDialog({
                       </Field>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Contact person" htmlFor="sell-edit-name">
+                      <Field label="Người liên hệ" htmlFor="sell-edit-name">
                         <Input
                           id="sell-edit-name"
-                          placeholder="Name"
+                          placeholder="Tên người mua"
                           value={form.sell.name}
                           onChange={(event) =>
                             setForm((prev) =>
@@ -870,7 +867,7 @@ export function InventoryDetailDialog({
                           }
                         />
                       </Field>
-                      <Field label="Phone" htmlFor="sell-edit-phone">
+                      <Field label="Số điện thoại" htmlFor="sell-edit-phone">
                         <Input
                           id="sell-edit-phone"
                           inputMode="numeric"
@@ -886,10 +883,10 @@ export function InventoryDetailDialog({
                         />
                       </Field>
                     </div>
-                    <Field label="Address detail" htmlFor="sell-edit-address">
+                    <Field label="Địa chỉ chi tiết" htmlFor="sell-edit-address">
                       <Input
                         id="sell-edit-address"
-                        placeholder="Street, ward, district..."
+                        placeholder="Số nhà, đường, phường/xã..."
                         value={form.sell.addressDetail}
                         onChange={(event) =>
                           setForm((prev) =>
@@ -903,7 +900,7 @@ export function InventoryDetailDialog({
                         }
                       />
                     </Field>
-                    <Field label="Province">
+                    <Field label="Tỉnh/Thành phố">
                       <ProvinceCombobox
                         value={form.sell.provinceId}
                         onChange={(value) =>
@@ -913,18 +910,18 @@ export function InventoryDetailDialog({
                         }
                         provinces={provincesData}
                         loading={provincesLoading}
-                        placeholder="Sell province"
+                        placeholder="Tỉnh/Thành phố bán hàng"
                       />
                     </Field>
                   </>
                 ) : (
                   <div className="rounded-lg border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
-                    No sale transaction yet
+                    Chưa có giao dịch bán hàng
                   </div>
                 )}
                 <div className="space-y-2 pt-1">
                   <label className="text-xs font-medium text-muted-foreground">
-                    Upload images
+                    Tải ảnh lên
                   </label>
                   <input
                     id="sell-edit-images-input"
@@ -947,7 +944,7 @@ export function InventoryDetailDialog({
                       >
                         <img
                           src={sellImagePreviews[index]}
-                          alt={`Sell edit preview ${index + 1}`}
+                          alt={`Ảnh bán hàng xem trước ${index + 1}`}
                           className="size-full rounded-md object-cover border border-border/60"
                         />
                         <Button
@@ -962,7 +959,7 @@ export function InventoryDetailDialog({
                           }
                         >
                           <X className="size-3" />
-                          <span className="sr-only">Remove image</span>
+                          <span className="sr-only">Xóa ảnh</span>
                         </Button>
                       </div>
                     ))}
@@ -972,7 +969,7 @@ export function InventoryDetailDialog({
                     >
                       <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-foreground transition-colors">
                         <Plus className="size-4" />
-                        <span className="text-[10px] font-medium">Image</span>
+                        <span className="text-[10px] font-medium">Ảnh</span>
                       </div>
                     </label>
                   </div>
@@ -986,7 +983,7 @@ export function InventoryDetailDialog({
             <div className="space-y-4 rounded-xl bg-muted/40 p-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-medium text-foreground">
-                  Purchase
+                  Nhập hàng
                 </h3>
                 <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-foreground">
                   {formatMoney(item.buyInfo.amount)}
@@ -1018,10 +1015,10 @@ export function InventoryDetailDialog({
                 <div className="flex items-start gap-2">
                   <CalendarDays className="size-4 text-muted-foreground/60 mt-0.5 shrink-0" />
                   <div className="text-sm text-muted-foreground">
-                    Warranty:{" "}
+                    Bảo hành:{" "}
                     {item.warrantyExpiryDate
                       ? toDateInputValue(item.warrantyExpiryDate)
-                      : "No warranty date"}
+                      : "Chưa có hạn bảo hành"}
                   </div>
                 </div>
               </div>
@@ -1029,7 +1026,7 @@ export function InventoryDetailDialog({
 
             <div className="space-y-4 rounded-xl bg-muted/40 p-4">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-medium text-foreground">Sale</h3>
+                <h3 className="text-sm font-medium text-foreground">Bán hàng</h3>
                 <span
                   className={cn(
                     "whitespace-nowrap text-sm font-semibold tabular-nums",
@@ -1072,9 +1069,9 @@ export function InventoryDetailDialog({
         {/* Images Section */}
         <div className="space-y-3 pt-2">
           <div className="flex items-baseline gap-2">
-            <h3 className="text-sm font-medium text-foreground">Images</h3>
+            <h3 className="text-sm font-medium text-foreground">Hình ảnh</h3>
             <span className="text-xs text-muted-foreground">
-              {images.length} photo{images.length === 1 ? "" : "s"}
+              {images.length} ảnh
             </span>
           </div>
 
@@ -1098,7 +1095,7 @@ export function InventoryDetailDialog({
                     >
                       <img
                         src={image.url}
-                        alt={`Inventory preview ${index + 1}`}
+                        alt={`Ảnh kho hàng xem trước ${index + 1}`}
                         loading="lazy"
                         decoding="async"
                         className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
@@ -1119,7 +1116,7 @@ export function InventoryDetailDialog({
                         onClick={() => handleDeleteImage(image)}
                       >
                         <Trash2 className="size-3.5" />
-                        <span className="sr-only">Delete saved image</span>
+                        <span className="sr-only">Xóa ảnh đã lưu</span>
                       </Button>
                     )}
                   </div>
@@ -1128,12 +1125,12 @@ export function InventoryDetailDialog({
             </div>
           ) : (
             <div className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-              No images
+              Chưa có ảnh
             </div>
           )}
           {images.length > 0 && (
             <div className="text-xs text-muted-foreground/80">
-              Click a photo to view full screen
+              Bấm vào ảnh để xem toàn màn hình
             </div>
           )}
         </div>
@@ -1153,10 +1150,10 @@ export function InventoryDetailDialog({
                 }}
                 disabled={saving}
               >
-                Cancel
+                Hủy
               </Button>
               <Button type="button" onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : "Save"}
+                {saving ? "Đang lưu..." : "Lưu"}
               </Button>
             </>
           ) : (
@@ -1170,7 +1167,7 @@ export function InventoryDetailDialog({
               }}
             >
               <Pencil className="size-4" />
-              Update
+              Cập nhật
             </Button>
           )}
           <Button
@@ -1180,7 +1177,7 @@ export function InventoryDetailDialog({
             disabled={saving}
           >
             <Trash2 className="size-4" />
-            Delete
+            Xóa
           </Button>
         </div>
         {deleteError && (
@@ -1201,7 +1198,7 @@ export function InventoryDetailDialog({
           <DialogContent className="sm:max-w-4xl p-0 border-none bg-background max-h-[90vh] overflow-hidden">
             <DialogTitle className="sr-only">{item.title}</DialogTitle>
             <DialogDescription className="sr-only">
-              Inventory detail for {item.title}
+              Chi tiết kho hàng cho {item.title}
             </DialogDescription>
             <div className="max-h-[90vh] overflow-y-auto">
               {detailContent}
@@ -1218,14 +1215,13 @@ export function InventoryDetailDialog({
           className="w-screen h-screen max-w-none sm:max-w-none rounded-none border-none bg-black/95 p-0"
         >
           <DialogTitle id="inventory-lightbox-title" className="sr-only">
-            Inventory image viewer
+            Trình xem ảnh kho hàng
           </DialogTitle>
           <DialogDescription
             id="inventory-lightbox-description"
             className="sr-only"
           >
-            Full screen gallery. Use left and right arrow keys to navigate
-            images, and press Escape to close.
+            Thư viện ảnh toàn màn hình. Dùng phím mũi tên trái và phải để chuyển ảnh, nhấn Escape để đóng.
           </DialogDescription>
           <div className="relative h-full w-full flex items-center justify-center">
             <Button
@@ -1236,7 +1232,7 @@ export function InventoryDetailDialog({
               onClick={() => setIsLightboxOpen(false)}
             >
               <X className="size-5" />
-              <span className="sr-only">Close gallery</span>
+              <span className="sr-only">Đóng thư viện ảnh</span>
             </Button>
 
             {images.length > 1 && (
@@ -1248,14 +1244,14 @@ export function InventoryDetailDialog({
                 onClick={showPrevImage}
               >
                 <ChevronLeft className="size-6" />
-                <span className="sr-only">Previous image</span>
+                <span className="sr-only">Ảnh trước</span>
               </Button>
             )}
 
             {images.length > 0 && (
               <img
                 src={images[activeImageIndex]?.url}
-                alt={`Inventory image ${activeImageIndex + 1}`}
+                alt={`Ảnh kho hàng ${activeImageIndex + 1}`}
                 className="max-h-[85vh] max-w-[92vw] object-contain select-none"
               />
             )}
@@ -1269,7 +1265,7 @@ export function InventoryDetailDialog({
                 onClick={showNextImage}
               >
                 <ChevronRight className="size-6" />
-                <span className="sr-only">Next image</span>
+                <span className="sr-only">Ảnh tiếp theo</span>
               </Button>
             )}
 
@@ -1285,8 +1281,8 @@ export function InventoryDetailDialog({
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
-        title={`Delete "${item.title}"?`}
-        confirmText="Delete"
+        title={`Xóa "${item.title}"?`}
+        confirmText="Xóa"
         loading={deleting}
         onConfirm={handleDelete}
       />
